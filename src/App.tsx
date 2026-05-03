@@ -1,23 +1,23 @@
 import { createClient } from '@sanity/client';
+import { useState, useEffect } from 'react';
+import { Toaster, toast } from 'sonner';
 
+// --- CONFIGURACIÓN DE SANITY ---
 const client = createClient({
   projectId: 'hwujeebe',
   dataset: 'production',
-  useCdn: false, //Ponemos false para ver los cambios rapido al publicar
-  apiVersion: '2026-05-03', //Usa la fecha de hoy
+  useCdn: false, 
+  apiVersion: '2026-05-03', 
 });
 
-import { useState, useEffect } from 'react';
-import { Toaster, toast } from 'sonner'; // Importamos la librería de notificaciones
-
-// 1. Interfaz ampliada con 'categoria'
+// --- INTERFACES ---
 interface Producto {
-  id: number;
+  id: string; // Cambiado a string porque Sanity usa IDs con letras y números (_id)
   nombre: string;
   stock: number;
   imagen: string;
   precio: number;
-  categoria: string; 
+  categoria: string;
 }
 
 interface ItemCarrito extends Producto {
@@ -29,70 +29,61 @@ function App() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
-  
-  // NUEVO: Estado para el filtro actual
   const [categoriaActiva, setCategoriaActiva] = useState<string>('Todas');
 
   const miTelefono = "5491122334455";
-  const miAliasMP = "claros.javier"; // Tu alias de Mercado Pago
+  const miAliasMP = "claros.javier";
 
-  // --- SIMULACIÓN DE API -------------------------------
+  // --- CONEXIÓN REAL A SANITY ---
   useEffect(() => {
     const obtenerProductos = async () => {
       try {
-        // Esta consulta (GROQ) trae todos los documentos de tipo 'product'
+        const data = await client.fetch(`*[_type == "product"]{
+          "id": _id,
+          "nombre": name,
+          "stock": stock,
+          "precio": price,
+          "categoria": category,
+          "imagen": image.asset->url
+        }`);
+     
+        setProductos(data);
+        setCargando(false);
+      } catch (error) {
+        console.error("Error al traer productos de Sanity:", error);
+        setCargando(false);
+      }
+    };
+    obtenerProductos();
+  }, []);
 
-        const data = await
-  useEffect(() => {
-  const obtenerProductos = async () => {
-    try {
-      // Esta consulta (GROQ) trae todos los documentos de tipo 'product'
-      const data = await client.fetch(`*[_type == "product"]{
-        "id": _id,
-        "nombre": name,
-        "stock": stock,
-        "precio": price,
-        "categoria": category,
-        "imagen": image.asset->url
-      }`);
-      
-      setProductos(data);
-      setCargando(false);
-    } catch (error) {
-      console.error("Error al traer productos de Sanity:", error);
-      setCargando(false);
-    }
-  };
-  obtenerProductos();
-}, []);
-
-  // --- LÓGICA DEL CARRITO CON TOASTS ---
+  // --- LÓGICA DEL CARRITO ---
   const agregarAlCarrito = (producto: Producto) => {
     setCarrito((carritoActual) => {
       const itemExiste = carritoActual.find(item => item.id === producto.id);
 
       if (itemExiste) {
         if (itemExiste.cantidad < producto.stock) {
-          toast.success(`Sumaste otro/a ${producto.nombre}`); // Notificación de éxito
+          toast.success(`Sumaste otro/a ${producto.nombre}`);
           return carritoActual.map(item =>
             item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
           );
         }
-        toast.error("No hay más stock disponible"); // Notificación de error
+        toast.error("No hay más stock disponible");
         return carritoActual;
       } else {
-        toast.success(`${producto.nombre} agregado al carrito`); // Notificación de éxito
+        toast.success(`${producto.nombre} agregado al carrito`);
         return [...carritoActual, { ...producto, cantidad: 1 }];
       }
     });
   };
 
-  const restarDelCarrito = (id: number) => {
+  const restarDelCarrito = (id: string) => { // Cambiado a string
     setCarrito((carritoActual) => {
       const itemExiste = carritoActual.find(item => item.id === id);
-      
+     
       if (itemExiste?.cantidad === 1) {
-        toast.info("Producto eliminado del carrito"); // Notificación informativa
+        toast.info("Producto eliminado del carrito");
         return carritoActual.filter(item => item.id !== id);
       } else {
         return carritoActual.map(item =>
@@ -114,7 +105,6 @@ function App() {
       total += subtotal;
     });
 
-    // Añadimos las instrucciones de pago
     texto += `%0A*Total a abonar: $${total}*%0A%0A`;
     texto += `💳 *Datos para transferencia (Mercado Pago):*%0AAlias: ${miAliasMP}%0A%0AAguardo confirmación para enviar el comprobante.`;
 
@@ -122,12 +112,10 @@ function App() {
   };
 
   // --- LÓGICA DE FILTROS ---
-  // Extraemos las categorías únicas de los productos (ej: ['Remeras', 'Pantalones', 'Abrigos'])
-  const categoriasUnicas = ['Todas', ...Array.from(new Set(productos.map(p => p.categoria)))];
+  const categoriasUnicas = ['Todas', ...Array.from(new Set(productos.map(p => p.categoria)))].filter(Boolean);
 
-  // Filtramos la lista según el botón que el usuario tocó
-  const productosMostrados = categoriaActiva === 'Todas' 
-    ? productos 
+  const productosMostrados = categoriaActiva === 'Todas'
+    ? productos
     : productos.filter(p => p.categoria === categoriaActiva);
 
   // --- RENDERIZADO ---
@@ -137,23 +125,19 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 flex flex-col lg:flex-row gap-6">
-      
-      {/* Componente obligatorio para que los Toasts aparezcan en pantalla */}
       <Toaster position="bottom-right" richColors />
 
-      {/* COLUMNA IZQUIERDA: LISTA DE PRODUCTOS Y FILTROS */}
       <div className="w-full lg:w-3/4">
         <h1 className="text-3xl font-bold mb-6 text-gray-800">Catálogo de Ropa</h1>
-        
-        {/* BARRA DE FILTROS */}
+       
         <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
           {categoriasUnicas.map(cat => (
             <button
               key={cat}
               onClick={() => setCategoriaActiva(cat)}
               className={`px-4 py-2 rounded-full font-semibold transition whitespace-nowrap ${
-                categoriaActiva === cat 
-                ? 'bg-gray-800 text-white' 
+                categoriaActiva === cat
+                ? 'bg-gray-800 text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-200 shadow-sm'
               }`}
             >
@@ -161,24 +145,23 @@ function App() {
             </button>
           ))}
         </div>
-        
-        {/* GRILLA DE PRODUCTOS FILTRADOS */}
+       
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {productosMostrados.map((prod) => (
             <div key={prod.id} className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
-              <img src={prod.imagen} alt={prod.nombre} className="w-full h-64 object-cover" />
+              {prod.imagen && <img src={prod.imagen} alt={prod.nombre} className="w-full h-64 object-cover" />}
               <div className="p-4 flex flex-col flex-grow text-center">
                 <span className="text-xs uppercase tracking-wider text-gray-400 mb-1">{prod.categoria}</span>
                 <h2 className="text-xl font-bold text-gray-700">{prod.nombre}</h2>
                 <p className="text-lg text-green-600 font-bold mt-1">${prod.precio}</p>
                 <p className="mt-1 text-sm text-gray-500">Stock: {prod.stock}</p>
-                
+               
                 <button
                   onClick={() => agregarAlCarrito(prod)}
                   disabled={prod.stock === 0}
                   className={`mt-4 font-bold py-2 px-4 rounded-lg transition duration-300 ${
-                    prod.stock === 0 
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                    prod.stock === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-blue-500 hover:bg-blue-600 text-white'
                   }`}
                 >
@@ -188,17 +171,16 @@ function App() {
             </div>
           ))}
         </div>
-        
+       
         {productosMostrados.length === 0 && (
-          <p className="text-center text-gray-500 mt-10">No hay productos en esta categoría.</p>
+          <p className="text-center text-gray-500 mt-10">No hay productos publicados todavía.</p>
         )}
       </div>
 
-      {/* COLUMNA DERECHA: EL CARRITO */}
       <div className="w-full lg:w-1/4">
         <div className="bg-white rounded-xl shadow-lg p-6 sticky top-6">
           <h2 className="text-2xl font-bold mb-4 border-b pb-2">Tu Pedido</h2>
-          
+         
           {carrito.length === 0 ? (
             <p className="text-gray-500 text-center my-8">El carrito está vacío</p>
           ) : (
@@ -209,16 +191,16 @@ function App() {
                     <span className="font-semibold">{item.nombre}</span>
                     <span className="font-bold">${item.precio * item.cantidad}</span>
                   </div>
-                  
+                 
                   <div className="flex items-center gap-3">
-                    <button 
+                    <button
                       onClick={() => restarDelCarrito(item.id)}
                       className="bg-red-100 text-red-600 hover:bg-red-200 px-2 py-1 rounded font-bold"
                     >
                       -
                     </button>
                     <span>{item.cantidad}</span>
-                    <button 
+                    <button
                       onClick={() => agregarAlCarrito(item)}
                       className="bg-green-100 text-green-600 hover:bg-green-200 px-2 py-1 rounded font-bold"
                     >
@@ -227,7 +209,7 @@ function App() {
                   </div>
                 </div>
               ))}
-              
+             
               <div className="mt-2 pt-2 flex justify-between items-center font-bold text-lg">
                 <span>Total:</span>
                 <span>${carrito.reduce((acc, item) => acc + (item.precio * item.cantidad), 0)}</span>
