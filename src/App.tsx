@@ -1,3 +1,12 @@
+import { createClient } from '@sanity/client';
+
+const client = createClient({
+  projectId: 'hwujeebe',
+  dataset: 'production',
+  useCdn: false, //Ponemos false para ver los cambios rapido al publicar
+  apiVersion: '2026-05-03', //Usa la fecha de hoy
+});
+
 import { useState, useEffect } from 'react';
 import { Toaster, toast } from 'sonner'; // Importamos la librería de notificaciones
 
@@ -27,26 +36,35 @@ function App() {
   const miTelefono = "5491122334455";
   const miAliasMP = "claros.javier"; // Tu alias de Mercado Pago
 
-  // --- SIMULACIÓN DE API ---
+  // --- SIMULACIÓN DE API -------------------------------
   useEffect(() => {
     const obtenerProductos = async () => {
       try {
-        setTimeout(() => {
-          setProductos([
-            { id: 1, nombre: "Remera Classic Blanca", stock: 12, precio: 15000, categoria: "Remeras", imagen: "https://via.placeholder.com/300x400?text=Remera+Blanca" },
-            { id: 2, nombre: "Remera Oversize Gris", stock: 8, precio: 17000, categoria: "Remeras", imagen: "https://via.placeholder.com/300x400?text=Remera+Gris" },
-            { id: 3, nombre: "Pantalón Jean Blue", stock: 5, precio: 35000, categoria: "Pantalones", imagen: "https://via.placeholder.com/300x400?text=Jean+Blue" },
-            { id: 4, nombre: "Pantalón Cargo Negro", stock: 2, precio: 38000, categoria: "Pantalones", imagen: "https://via.placeholder.com/300x400?text=Cargo+Negro" },
-            { id: 5, nombre: "Buzo Oversize Negro", stock: 3, precio: 42000, categoria: "Abrigos", imagen: "https://via.placeholder.com/300x400?text=Buzo+Negro" }
-          ]);
-          setCargando(false);
-        }, 1000);
-      } catch (error) {
-        console.error("Error", error);
-      }
-    };
-    obtenerProductos();
-  }, []);
+        // Esta consulta (GROQ) trae todos los documentos de tipo 'product'
+
+        const data = await
+  useEffect(() => {
+  const obtenerProductos = async () => {
+    try {
+      // Esta consulta (GROQ) trae todos los documentos de tipo 'product'
+      const data = await client.fetch(`*[_type == "product"]{
+        "id": _id,
+        "nombre": name,
+        "stock": stock,
+        "precio": price,
+        "categoria": category,
+        "imagen": image.asset->url
+      }`);
+      
+      setProductos(data);
+      setCargando(false);
+    } catch (error) {
+      console.error("Error al traer productos de Sanity:", error);
+      setCargando(false);
+    }
+  };
+  obtenerProductos();
+}, []);
 
   // --- LÓGICA DEL CARRITO CON TOASTS ---
   const agregarAlCarrito = (producto: Producto) => {
