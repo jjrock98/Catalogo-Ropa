@@ -5,11 +5,11 @@ const producto = defineType({
   type: 'document',
   title: 'Productos de Ropa',
   fields: [
-    defineField({ name: 'nombre', type: 'string', title: 'Nombre de la prenda' }),
-    defineField({ name: 'precio', type: 'number', title: 'Precio' }),
+    defineField({ name: 'name', type: 'string', title: 'Nombre de la prenda' }),
+    defineField({ name: 'price', type: 'number', title: 'Precio' }),
     defineField({ name: 'stock', type: 'number', title: 'Stock disponible' }),
-    defineField({ name: 'categoria', type: 'string', title: 'Categoría' }),
-    defineField({ name: 'imagen', type: 'image', title: 'Foto de la prenda', options: { hotspot: true } }),
+    defineField({ name: 'category', type: 'string', title: 'Categoría' }),
+    defineField({ name: 'image', type: 'image', title: 'Foto de la prenda', options: { hotspot: true } }),
   ]
 })
 
