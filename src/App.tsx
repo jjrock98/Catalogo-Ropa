@@ -10,10 +10,9 @@ const client = createClient({
   apiVersion: '2026-05-03', 
 });
 
-
 // --- INTERFACES ---
 interface Producto {
-  id: string; // Cambiado a string porque Sanity usa IDs con letras y números (_id)
+  id: string; 
   nombre: string;
   stock: number;
   imagen: string;
@@ -35,19 +34,23 @@ function App() {
   const miTelefono = "5491122334455";
   const miAliasMP = "claros.javier";
 
-  // --- CONEXIÓN REAL A SANITY ---
+  // --- CONEXIÓN REAL A SANITY (CORREGIDA) ---
   useEffect(() => {
     const obtenerProductos = async () => {
       try {
-        const data = await client.fetch(`*[_type == "product"]{
+        // DIAGNÓSTICO TOTAL: Traemos TODO lo que sea de tipo "producto" 
+        // y usamos los nombres EXACTOS de tu archivo de esquema.
+        const data = await client.fetch(`*[_type == "producto"]{
           "id": _id,
-          "nombre": name,
+          "nombre": nombre,
           "stock": stock,
-          "precio": price,
-          "categoria": category,
-          "imagen": image.asset->url
+          "precio": precio,
+          "categoria": categoria,
+          "imagen": imagen.asset->url
         }`);
      
+        console.log("DATOS REALES DE SANITY:", data); // Para revisar en F12 -> Console
+        
         setProductos(data);
         setCargando(false);
       } catch (error) {
@@ -79,7 +82,7 @@ function App() {
     });
   };
 
-  const restarDelCarrito = (id: string) => { // Cambiado a string
+  const restarDelCarrito = (id: string) => { 
     setCarrito((carritoActual) => {
       const itemExiste = carritoActual.find(item => item.id === id);
      
