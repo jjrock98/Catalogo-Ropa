@@ -10,6 +10,7 @@ const client = createClient({
   apiVersion: '2026-05-03', 
 });
 
+
 // --- INTERFACES ---
 interface Producto {
   id: string; // Cambiado a string porque Sanity usa IDs con letras y números (_id)
