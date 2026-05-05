@@ -70,7 +70,7 @@ function App() {
           "stock": stock,
           "precio": price,
           "categoria": category,
-          "imagen": imagen.asset->url
+          "imagen": image.asset->url
         }`);
         
         setProductos(dataProductos);

@@ -24,7 +24,13 @@ export default defineType({
           { title: 'Rojo', value: '#ef4444' },
           { title: 'Azul', value: '#3b82f6' },
           { title: 'Verde', value: '#22c55e' },
-          { title: 'Beige', value: '#f5f5dc' }
+          { title: 'Beige', value: '#f5f5dc' },
+          { title: 'Rosa', value: '#ec4899'},
+          { title: 'Violeta', value: '#8b5cf6'},
+          { title: 'Morado', value: '#7c3aed'},
+          { title: 'Naranja', value: '#f97316'},
+          { title: 'Caqui', value: '#c3b091'},
+          { title: 'Marrón', value: '#78350f'}
         ]
       }
     })
