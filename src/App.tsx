@@ -74,7 +74,7 @@ function App() {
           "precioMediaDocena": precioMediaDocena,
           "precioDocena": precioDocena,
           "categoria": category,
-          "imagenes": imagenes[0].asset->url 
+          "imagenes": imagenes[].asset->url 
         }`);
         setProductos(dataProductos);
       } catch (error) {
