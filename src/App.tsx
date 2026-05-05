@@ -151,35 +151,47 @@ function App() {
   const enviarPedidoWhatsApp = () => {
     if (carrito.length === 0) return;
 
-    let texto = "Hola! Quiero realizar el siguiente pedido:%0A%0A";
+    // --- 1. CONSTRUCCIÓN DEL TEXTO ---
+    // Usamos '\n' para saltos de línea limpios dentro de JavaScript
+    let texto = "Hola! Quiero realizar el siguiente pedido:\n\n";
     let total = 0;
 
     const itemsStock = carrito.filter(item => item.tipoStock === 'con_stock');
     const itemsEncargo = carrito.filter(item => item.tipoStock === 'a_pedido');
 
-    // 1. Listar lo que sí tiene stock y se cobra ahora
+    // SECCIÓN A: Productos que sí tienen stock
     if (itemsStock.length > 0) {
-      texto += "✅ *PRODUCTOS EN STOCK (Para abonar ahora):*%0A";
+      texto += "✅ *PRODUCTOS EN STOCK (Para abonar ahora):*\n";
       itemsStock.forEach(item => {
         const subtotal = item.precioAplicado * item.cantidadPacks;
-        texto += `- ${item.cantidadPacks}x ${item.tipoVenta} de ${item.nombre} ($${subtotal})%0A`;
+        // Agregamos el nombre y modelo correctamente
+        texto += `- ${item.cantidadPacks}x ${item.tipoVenta} de ${item.nombre} ($${subtotal})\n`;
         total += subtotal;
       });
-      texto += `%0A*Total a abonar: $${total}*%0A`;
-      texto += `💳 *Datos para transferencia:*%0AAlias: ${configTienda.aliasMP}%0A%0A`;
+      texto += `\n*Total a abonar: $${total}*\n`;
+      texto += `💳 *Datos para transferencia:*\nAlias: ${configTienda.aliasMP}\n\n`;
     }
 
-    // 2. Listar los encargos a pedido
+    // SECCIÓN B: Encargos a pedido (Lo que te está fallando ahora)
     if (itemsEncargo.length > 0) {
-      texto += "📦 *ENCARGOS A PEDIDO (Pago a coordinar):*%0A";
+      texto += "📦 *ENCARGOS A PEDIDO (Pago a coordinar):*\n";
       itemsEncargo.forEach(item => {
-        texto += `- ${item.cantidadPacks}x ${item.tipoVenta} de ${item.nombre}%0A`;
+        // AQUÍ ESTÁ LA CLAVE: Agregamos el nombre y modelo del encargo
+        texto += `- ${item.cantidadPacks}x ${item.tipoVenta} de ${item.nombre}\n`;
       });
-      texto += "%0AAguardo confirmación para coordinar los encargos.";
+      texto += "\nAguardo confirmación para coordinar los encargos.";
     }
 
-    window.open(`https://wa.me/${configTienda.telefono}?text=${texto}`, '_blank');
+    // --- 2. CODIFICACIÓN SEGURA PARA LA URL ---
+    // Esta función transforma espacios, emojis, acentos y saltos de línea (\n)
+    // en un formato que el navegador y WhatsApp entienden perfectamente sin cortarse.
+    const textoCodificadoForUrl = encodeURIComponent(texto);
+
+    // --- 3. ENVÍO ---
+    window.open(`https://wa.me/${configTienda.telefono}?text=${textoCodificadoForUrl}`, '_blank');
   };
+
+
 
   // --- LÓGICA DE FILTROS ---
   const categoriasUnicas = ['Todas', ...Array.from(new Set(productos.map(p => p.categoria)))].filter(Boolean);
