@@ -121,7 +121,7 @@ export default function App() {
       mensaje += `- *Dirección:* ${direccionCliente}\n`;
     }
     mensaje += "\n";
-    mensaje += "✅ *PRODUCTOS EN STOCK:*\n";
+    mensaje += "✅ *PRODUCTOS:* \n";
     let total = 0;
     carrito.forEach(item => {
       const subtotal = item.precioAplicado * item.cantidadPacks;
@@ -262,9 +262,11 @@ export default function App() {
             </aside>
           </div>
         ) : (
+          /* VISTA CONTACTO */
           <div className="max-w-4xl mx-auto py-10 text-center flex flex-col items-center">
              <h2 className="text-4xl font-black mb-8">Contacto y Ubicación</h2>
              
+             {/* BOTÓN WHATSAPP VERDE */}
              <button 
                onClick={abrirWhatsAppDirecto}
                className="mb-12 bg-[#25D366] hover:bg-[#128C7E] text-white px-10 py-5 rounded-[2rem] font-black flex items-center gap-4 shadow-2xl shadow-green-500/30 transition-all hover:scale-105 active:scale-95"
@@ -282,6 +284,7 @@ export default function App() {
                   <p className="text-2xl font-black">{configTienda.direccion || "Dirección no configurada"}</p>
                </div>
                
+               {/* DESCRIPCIÓN DINÁMICA */}
                {configTienda.descripcionUbicacion && (
                  <div className="bg-slate-500/5 p-8 rounded-[2.5rem] border border-slate-500/10 max-w-2xl mx-auto relative">
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[9px] font-bold px-3 py-1 rounded-full uppercase">Información</span>
@@ -292,6 +295,7 @@ export default function App() {
                )}
              </div>
              
+             {/* IFRAME DE GOOGLE MAPS */}
              <div className="w-full h-[500px] google-maps-container shadow-2xl rounded-[2.5rem] overflow-hidden border-8 border-white/40 bg-slate-200">
                {configTienda.mapaIframe ? (
                  <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: configTienda.mapaIframe }} />
@@ -309,6 +313,7 @@ export default function App() {
         )}
       </main>
 
+      {/* PUSH FLOTANTE DEL CARRITO */}
       {carrito.length > 0 && vistaActiva === 'catalogo' && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-50 animate-in slide-in-from-bottom-10 duration-500">
             <button
@@ -332,3 +337,5 @@ export default function App() {
     </div>
   );
 }
+// --- FIN DEL ARCHIVO ---
+
