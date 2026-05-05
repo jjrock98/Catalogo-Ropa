@@ -98,6 +98,55 @@ export default function App() {
     setCarrito((prev) => prev.map(item => item.idCart === idCart ? { ...item, cantidadPacks: item.cantidadPacks - 1 } : item).filter(item => item.cantidadPacks > 0));
   };
 
+  // ... (debajo de restarDelCarrito)
+
+const enviarPedidoWhatsApp = () => {
+  if (carrito.length === 0) return;
+
+  // --- ENCABEZADO PROFESIONAL ---
+  let mensaje = "🙌 *¡Hola! Quiero realizar un pedido en Claros Importados* 🛒\n\n";
+  
+  // --- DATOS PARA AGILIZAR ---
+  mensaje += "👤 *MIS DATOS:*\n";
+  mensaje += "- *Nombre:* \n";
+  mensaje += "- *Localidad:* \n";
+  mensaje += "- *Envío:* (Moto / Correo / Retiro) \n\n";
+
+  const itemsStock = carrito.filter(item => item.tipoStock === 'con_stock');
+  const itemsEncargo = carrito.filter(item => item.tipoStock === 'a_pedido');
+
+  // --- SECCIÓN STOCK ---
+  if (itemsStock.length > 0) {
+    mensaje += "✅ *PRODUCTOS EN STOCK:*\n";
+    let totalS = 0;
+    itemsStock.forEach(item => {
+      const sub = item.precioAplicado * item.cantidadPacks;
+      mensaje += `• ${item.cantidadPacks}x ${item.tipoVenta} - *${item.nombre}* ($${sub})\n`;
+      totalS += sub;
+    });
+    mensaje += `\n💰 *TOTAL PRODUCTOS:* $${totalS}\n`;
+    mensaje += `📌 *ALIAS MP:* ${configTienda.aliasMP}\n`;
+  }
+
+  // --- SECCIÓN ENCARGOS ---
+  if (itemsEncargo.length > 0) {
+    mensaje += "\n📦 *ENCARGOS POR PEDIDO (A COORDINAR):*\n";
+    itemsEncargo.forEach(item => {
+      mensaje += `• ${item.cantidadPacks}x ${item.tipoVenta} - *${item.nombre.toUpperCase()}*\n`;
+    });
+  }
+
+  // --- CIERRE ---
+  mensaje += "\n🚀 _Aguardo confirmación de stock para realizar el pago._";
+
+  const num = configTienda.telefono.replace(/\D/g, '');
+  const url = `https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(mensaje)}`;
+  window.open(url, '_blank');
+};
+
+// ... (después seguís con irAlCarrito)
+
+
   const irAlCarrito = () => {
     setVistaActiva('catalogo');
     setTimeout(() => {
@@ -226,9 +275,13 @@ export default function App() {
                         <span className="font-bold opacity-50">SUBTOTAL</span>
                         <span className="text-4xl font-black text-green-500">${carrito.reduce((acc, i) => acc + (i.precioAplicado * i.cantidadPacks), 0)}</span>
                       </div>
-                      <button onClick={() => window.open(`https://wa.me/${configTienda.telefono.replace(/\D/g, '')}?text=Hola! Quiero este pedido:\n${carrito.map(i => `- ${i.cantidadPacks}x ${i.tipoVenta} de ${i.nombre}`).join('\n')}`, '_blank')} className="w-full bg-green-500 text-white font-black py-5 rounded-[1.8rem] shadow-xl shadow-green-500/30 hover:scale-[1.02] active:scale-95 transition">
+                      <button 
+                        onClick={enviarPedidoWhatsApp} 
+                        className="w-full bg-green-500 text-white font-black py-5 rounded-[1.8rem] shadow-xl shadow-green-500/30 hover:scale-[1.02] active:scale-95 transition"
+                      >
                         CONFIRMAR WHATSAPP
                       </button>
+
                     </div>
                   </>
                 )}
