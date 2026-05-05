@@ -64,12 +64,12 @@ function App() {
         // 2. Traemos los productos actualizados
         const dataProductos = await client.fetch(`*[_type == "producto"]{
           "id": _id,
-          nombre,
-          descripcion,
-          colores,
-          stock,
-          precio,
-          categoria,
+          "nombre": name,
+          "descripcion":description,
+          "colores": colors,
+          "stock": stock,
+          "precio": price,
+          "categoria": category,
           "imagen": imagen.asset->url
         }`);
         
