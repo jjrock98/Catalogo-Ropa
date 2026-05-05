@@ -52,7 +52,7 @@ function App() {
     aliasMP: "claros.javier",
     direccion: "Cargando dirección...",
     descripcionUbicacion: "Visítanos en nuestra tienda física.",
-    mapaIframe: "" // Aquí se guardará el código del mapa
+    mapaIframe: "" 
   });
 
   useEffect(() => {
@@ -173,16 +173,19 @@ function App() {
     }
   };
 
-  const themeBg = modoOscuro ? "bg-gray-900" : "bg-gray-100";
-  const themeText = modoOscuro ? "text-gray-100" : "text-gray-800";
-  const cardBg = modoOscuro ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200";
-
-  // --- Agrego esto ---
   const irAlCarrito = () => {
     const seccionCarrito = document.getElementById('carrito-seccion');
     seccionCarrito?.scrollIntoView({ behavior: 'smooth' });
   };
-  // -----------
+
+  // --- DISEÑO PREMIUM ---
+  const themeBg = modoOscuro 
+    ? "bg-gradient-to-br from-slate-900 via-gray-900 to-black" 
+    : "bg-gradient-to-br from-slate-50 via-gray-100 to-gray-200";
+  const themeText = modoOscuro ? "text-gray-100" : "text-gray-800";
+  const cardBg = modoOscuro 
+    ? "bg-gray-800/80 backdrop-blur-md border-gray-700 shadow-2xl" 
+    : "bg-white/80 backdrop-blur-md border-gray-100 shadow-xl shadow-blue-900/5";
 
   if (cargando) return <div className="min-h-screen flex items-center justify-center text-2xl font-bold bg-gray-100">Cargando catálogo...</div>;
 
@@ -221,7 +224,7 @@ function App() {
         {/* GRID DE PRODUCTOS */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-12">
           {productosMostrados.map((prod) => (
-            <div key={prod.id} className={`rounded-2xl shadow-lg overflow-hidden flex flex-col border transition-all hover:-translate-y-1 ${cardBg}`}>
+            <div key={prod.id} className={`rounded-2xl overflow-hidden flex flex-col border transition-all hover:-translate-y-1 ${cardBg}`}>
               <div className="relative cursor-pointer group" onClick={() => abrirModal(prod)}>
                 {prod.imagenes?.length ? (
                   <img src={prod.imagenes[0]} alt={prod.nombre} className="w-full h-64 object-cover" />
@@ -235,147 +238,19 @@ function App() {
               <div className="p-5 flex flex-col flex-grow">
                 <span className="text-xs font-bold text-blue-500 uppercase">{prod.categoria}</span>
                 <h2 className="text-xl font-bold">{prod.nombre}</h2>
-
-                {/* --- ESTO ES LO QUE TIENES QUE AGREGAR --- */}
+                
+                {/* DESCRIPCIÓN REPARADA */}
                 {prod.descripcion && (
-                  <p className={`text-sm mt-1 mb-3 ${modoOscuro ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p className={`text-sm mt-1 mb-2 line-clamp-2 ${modoOscuro ? 'text-gray-400' : 'text-gray-600'}`}>
                     {prod.descripcion}
                   </p>
                 )}
-                {/* ---------------------------------------- */}
 
-                  {/* Aquí siguen los botones de los precios... */}
-
-
-                
                 <div className="mt-auto pt-4 flex flex-col gap-2">
-                   <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+                   <div className="flex justify-between items-center bg-gray-50/50 dark:bg-gray-700/30 p-2 rounded-lg">
                       <span className="text-sm">Media Docena: <b className="text-green-600">${prod.precioMediaDocena}</b></span>
-                      <button onClick={() => agregarAlCarrito(prod, 'Media Docena')} className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-bold">+</button>
+                      <button onClick={() => agregarAlCarrito(prod, 'Media Docena')} className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700">+</button>
                    </div>
-                   <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+                   <div className="flex justify-between items-center bg-gray-50/50 dark:bg-gray-700/30 p-2 rounded-lg">
                       <span className="text-sm">Docena: <b className="text-green-600">${prod.precioDocena}</b></span>
-                      <button onClick={() => agregarAlCarrito(prod, 'Docena')} className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-bold">+</button>
-                   </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* --- NUEVA SECCIÓN DE UBICACIÓN --- */}
-        <div className={`mt-16 p-8 rounded-3xl shadow-xl border ${cardBg}`}>
-          <div className="flex items-center gap-4 mb-6">
-            <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-500/30">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <h2 className="text-3xl font-extrabold tracking-tight">Nuestra Ubicación</h2>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold text-blue-600">{configTienda.direccion}</h3>
-              <p className={`text-lg leading-relaxed ${modoOscuro ? 'text-gray-400' : 'text-gray-600'}`}>
-                {configTienda.descripcionUbicacion}
-              </p>
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-2xl border border-blue-100 dark:border-blue-800">
-                <p className="font-bold mb-1">Horarios de Atención:</p>
-                <p className="opacity-80">Lunes a Sábados: 09:00 - 19:00 hs</p>
-              </div>
-            </div>
-
-            
-            <div className="rounded-2xl overflow-hidden shadow-2xl border-4 border-white dark:border-gray-700 h-[350px] relative">
-              {configTienda.mapaIframe ? (
-                /* Si el texto contiene la palabra <iframe, lo trata como código */
-                configTienda.mapaIframe.includes('<iframe') ? (
-                  <div 
-                    className="w-full h-full"
-                    dangerouslySetInnerHTML={{ 
-                      __html: configTienda.mapaIframe
-                        .replace(/width="\d+"/, 'width="100%"')
-                        .replace(/height="\d+"/, 'height="100%"') 
-                    }} 
-                  />
-                ) : (
-                  /* Si es solo un link, lo pone directamente en el src */
-                  <iframe 
-                    src={configTienda.mapaIframe} 
-                    width="100%" 
-                    height="100%" 
-                    style={{ border: 0 }} 
-                    allowFullScreen 
-                    loading="lazy"
-                  ></iframe>
-                )
-              ) : (
-                <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-center p-6">
-                  <p className="font-medium opacity-50">Cargando mapa...</p>
-                </div>
-              )}
-            </div>
-
-          
-
-          </div>
-        </div>
-      </div>
-
-      {/* CARRITO LATERAL */}
-      <div id="carrito-seccion" className="w-full lg:w-1/4">
-        <div className={`rounded-2xl shadow-xl p-6 sticky top-6 border ${cardBg}`}>
-          <h2 className="text-2xl font-extrabold mb-6 border-b pb-4">Tu Pedido</h2>
-          {carrito.length === 0 ? (
-            <p className="text-center py-10 opacity-50">El carrito está vacío</p>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {carrito.map(item => (
-                <div key={item.idCart} className="flex justify-between items-center border-b pb-2">
-                  <div className="text-sm">
-                    <p className="font-bold">{item.nombre}</p>
-                    <p className="text-blue-500 text-xs">{item.tipoVenta} x{item.cantidadPacks}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => restarDelCarrito(item.idCart)} className="bg-gray-200 dark:bg-gray-600 px-2 rounded">-</button>
-                    <button onClick={() => enviarPedidoWhatsApp()} className="text-green-600 font-bold">${item.precioAplicado * item.cantidadPacks}</button>
-                  </div>
-                </div>
-              ))}
-              <div className="pt-4 text-xl font-bold flex justify-between">
-                <span>Total:</span>
-                <span className="text-green-600">${carrito.reduce((acc, item) => acc + (item.precioAplicado * item.cantidadPacks), 0)}</span>
-              </div>
-              <button onClick={enviarPedidoWhatsApp} className="bg-green-500 text-white font-bold py-3 rounded-xl w-full mt-4">
-                Pedir por WhatsApp
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* MODAL IMAGEN */}
-      {productoAmpliando && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setProductoAmpliando(null)}>
-          <img src={productoAmpliando.imagenes?.[indiceImagenModal]} className="max-h-full max-w-full rounded-lg" />
-        </div>
-      )}
-      {/* --- PEGAR BOTON FLOTANTE AQUI ---*/}
-      {carrito.length > 0 && (
-        <button
-        onClick={irAlCarrito}
-        className="lg:hidden fixed bottom-6 right-6 z-40 bg-green-500 text-white p-4 rounded-full shadow-2x1 flex items-center gap-2 animate-bounce border-2 border-white">
-        <svg xmlns="https://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-        <span className="font-bold">{carrito.reduce((acc, item) => acc + item.cantidadPacks, 0)}</span>
-      </button>
-
-        <)}
-    </div>
-  );
-}
-
-export default App;
+                      <button onClick
