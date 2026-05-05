@@ -235,6 +235,19 @@ function App() {
               <div className="p-5 flex flex-col flex-grow">
                 <span className="text-xs font-bold text-blue-500 uppercase">{prod.categoria}</span>
                 <h2 className="text-xl font-bold">{prod.nombre}</h2>
+
+                {/* --- ESTO ES LO QUE TIENES QUE AGREGAR --- */}
+                {prod.descripcion && (
+                  <p className={`text-sm mt-1 mb-3 ${modoOscuro ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {prod.descripcion}
+                  </p>
+                )}
+                {/* ---------------------------------------- */}
+
+                  {/* Aquí siguen los botones de los precios... */}
+
+
+                
                 <div className="mt-auto pt-4 flex flex-col gap-2">
                    <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
                       <span className="text-sm">Media Docena: <b className="text-green-600">${prod.precioMediaDocena}</b></span>
@@ -360,7 +373,7 @@ function App() {
         <span className="font-bold">{carrito.reduce((acc, item) => acc + item.cantidadPacks, 0)}</span>
       </button>
 
-        )}
+        <)}
     </div>
   );
 }
