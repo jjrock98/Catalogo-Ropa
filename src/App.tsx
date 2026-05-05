@@ -177,6 +177,13 @@ function App() {
   const themeText = modoOscuro ? "text-gray-100" : "text-gray-800";
   const cardBg = modoOscuro ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200";
 
+  // --- Agrego esto ---
+  const irAlCarrito = () => {
+    const seccionCarrito = document.getElementById('carrito-seccion');
+    seccionCarrito?.scrollIntoView({ behavior: 'smooth' });
+  };
+  // -----------
+
   if (cargando) return <div className="min-h-screen flex items-center justify-center text-2xl font-bold bg-gray-100">Cargando catálogo...</div>;
 
   const categoriasUnicas = ['Todas', ...Array.from(new Set(productos.map(p => p.categoria)))].filter(Boolean);
@@ -305,7 +312,7 @@ function App() {
       </div>
 
       {/* CARRITO LATERAL */}
-      <div className="w-full lg:w-1/4">
+      <div id="carrito-seccion" className="w-full lg:w-1/4">
         <div className={`rounded-2xl shadow-xl p-6 sticky top-6 border ${cardBg}`}>
           <h2 className="text-2xl font-extrabold mb-6 border-b pb-4">Tu Pedido</h2>
           {carrito.length === 0 ? (
@@ -342,6 +349,18 @@ function App() {
           <img src={productoAmpliando.imagenes?.[indiceImagenModal]} className="max-h-full max-w-full rounded-lg" />
         </div>
       )}
+      {/* --- PEGAR BOTON FLOTANTE AQUI ---*/}
+      {carrito.length > 0 && (
+        <button
+        onClick={irAlCarrito}
+        className="lg:hidden fixed bottom-6 right-6 z-40 bg-green-500 text-white p-4 rounded-full shadow-2x1 flex items-center gap-2 animate-bounce border-2 border-white">
+        <svg xmlns="https://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        <span className="font-bold">{carrito.reduce((acc, item) => acc + item.cantidadPacks, 0)}</span>
+      </button>
+
+        )}
     </div>
   );
 }
