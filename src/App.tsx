@@ -150,7 +150,6 @@ export default function App() {
     window.open(`https://wa.me/${num}`, '_blank');
   };
 
-  // --- ESTILOS ---
   const themeBg = modoOscuro ? "bg-slate-900 text-slate-100" : "bg-slate-50 text-slate-900";
   const cardBg = modoOscuro ? "bg-slate-800/60 border-slate-700 backdrop-blur-md" : "bg-white/70 border-white shadow-xl backdrop-blur-md";
 
@@ -160,7 +159,6 @@ export default function App() {
     <div className={`min-h-screen transition-colors duration-500 pb-20 ${themeBg}`}>
       <Toaster position="bottom-center" richColors />
 
-      {/* CSS para forzar que el iframe de Sanity sea responsivo */}
       <style>{`
         .google-maps-container iframe {
           width: 100% !important;
@@ -170,7 +168,6 @@ export default function App() {
         }
       `}</style>
 
-      {/* HEADER */}
       <header className={`sticky top-0 z-40 w-full border-b backdrop-blur-lg ${modoOscuro ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-slate-200'}`}>
         <div className="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
           <div className="flex flex-col">
@@ -199,7 +196,6 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {vistaActiva === 'catalogo' ? (
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* PRODUCTOS */}
             <div className="flex-1">
               <div className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
                 {['Todas', ...new Set(productos.map(p => p.categoria))].map(cat => (
@@ -227,7 +223,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* CARRITO (LADO DERECHO EN PC) */}
             <aside id="carrito-seccion" className="w-full lg:w-96">
               <div className={`sticky top-28 p-8 rounded-[2.5rem] border ${cardBg}`}>
                 <h2 className="text-3xl font-black mb-8">MI PEDIDO</h2>
@@ -267,11 +262,9 @@ export default function App() {
             </aside>
           </div>
         ) : (
-          /* VISTA CONTACTO ACTUALIZADA */
           <div className="max-w-4xl mx-auto py-10 text-center flex flex-col items-center">
              <h2 className="text-4xl font-black mb-8">Contacto y Ubicación</h2>
              
-             {/* BOTÓN WHATSAPP VERDE DIRECTO */}
              <button 
                onClick={abrirWhatsAppDirecto}
                className="mb-12 bg-[#25D366] hover:bg-[#128C7E] text-white px-10 py-5 rounded-[2rem] font-black flex items-center gap-4 shadow-2xl shadow-green-500/30 transition-all hover:scale-105 active:scale-95"
@@ -283,11 +276,10 @@ export default function App() {
                </div>
              </button>
 
-             {/* DIRECCIÓN Y DESCRIPCIÓN (MODIFICABLE DESDE SANITY) */}
              <div className="mb-10 space-y-4 px-4">
                <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500 mb-2">Donde encontrarnos</p>
-                  <p className="text-2xl font-black">{configTienda.direccion || "Cargando dirección..."}</p>
+                  <p className="text-2xl font-black">{configTienda.direccion || "Dirección no configurada"}</p>
                </div>
                
                {configTienda.descripcionUbicacion && (
@@ -300,7 +292,6 @@ export default function App() {
                )}
              </div>
              
-             {/* MAPA GOOGLE MAPS (IFRAME DE SANITY) */}
              <div className="w-full h-[500px] google-maps-container shadow-2xl rounded-[2.5rem] overflow-hidden border-8 border-white/40 bg-slate-200">
                {configTienda.mapaIframe ? (
                  <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: configTienda.mapaIframe }} />
@@ -318,7 +309,6 @@ export default function App() {
         )}
       </main>
 
-      {/* PUSH FLOTANTE DEL CARRITO (Aparece cuando hay items) */}
       {carrito.length > 0 && vistaActiva === 'catalogo' && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-50 animate-in slide-in-from-bottom-10 duration-500">
             <button
@@ -332,12 +322,9 @@ export default function App() {
                     <p className="font-black text-lg">Total: ${carrito.reduce((acc, i) => acc + (i.precioAplicado * i.cantidadPacks), 0)}</p>
                 </div>
               </div>
-              
               <div className="bg-white text-blue-600 font-black px-4 py-2 rounded-2xl relative z-10">
                 {carrito.reduce((acc, item) => acc + item.cantidadPacks, 0)} Items
               </div>
-
-              {/* Efecto de luz pasando por el botón */}
               <div className="absolute top-0 -left-full w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 group-hover:left-[150%] transition-all duration-1000"></div>
             </button>
         </div>
