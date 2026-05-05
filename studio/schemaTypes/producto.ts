@@ -35,7 +35,16 @@ export default defineType({
     }),
 
     defineField({ name: 'category', type: 'string', title: 'Categoría' }),
-    defineField({ name: 'image', type: 'image', title: 'Foto de la prenda', options: { hotspot: true } }),
+    defineField({
+      name: 'imagenes',
+      type: 'array',
+      title: 'Fotos de la prenda(Hasta 4)',
+      of: [{type: 'image', options:
+        {hotspot: true} }],
+      validation: (rule) =>
+    Rule.max(4).warning('Solo podés subir hasta 4 imágenes')
+    }),
+    
     defineField({
       name: 'colors',
       type: 'array',
