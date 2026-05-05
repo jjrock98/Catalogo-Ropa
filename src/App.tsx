@@ -285,14 +285,43 @@ export default function App() {
             </aside>
           </div>
         ) : (
-          /* VISTA CONTACTO (Igual que antes) */
-          <div className="text-center py-20">
-             <h2 className="text-4xl font-black mb-4">Contacto</h2>
-             <p className="text-xl">{configTienda.direccion}</p>
-             <button onClick={() => setVistaActiva('catalogo')} className="mt-8 text-blue-500 font-bold underline">Volver al catálogo</button>
+          /* VISTA CONTACTO ACTUALIZADA CON MAPA */
+          <div className="text-center py-10 max-w-4xl mx-auto flex flex-col items-center">
+             <h2 className="text-4xl font-black mb-2">Contacto</h2>
+             <p className="text-xl font-medium opacity-80 mb-8">{configTienda.direccion}</p>
+             
+             {/* Renderizado del iframe de Google Maps */}
+             {configTienda.mapaIframe ? (
+               <div 
+                 className="w-full h-96 rounded-[2rem] overflow-hidden shadow-xl border border-slate-500/20 bg-slate-500/5"
+                 dangerouslySetInnerHTML={{ __html: configTienda.mapaIframe }}
+               />
+             ) : (
+               <div className="w-full h-96 rounded-[2rem] border-2 border-dashed border-slate-500/30 flex items-center justify-center opacity-50">
+                 <p>El mapa aún no ha sido cargado en Sanity</p>
+               </div>
+             )}
+
+             <button onClick={() => setVistaActiva('catalogo')} className="mt-10 px-8 py-3 rounded-2xl bg-slate-500/10 hover:bg-slate-500/20 font-bold transition">
+               ← Volver al catálogo
+             </button>
           </div>
         )}
       </main>
+
+      {/* BOTÓN FLOTANTE DEL CARRITO */}
+      {carrito.length > 0 && vistaActiva === 'catalogo' && (
+        <button
+          onClick={irAlCarrito}
+          className="fixed bottom-6 right-6 md:hidden bg-blue-600 text-white px-6 py-4 rounded-full shadow-[0_10px_40px_-10px_rgba(37,99,235,1)] z-50 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 font-black text-lg border-2 border-blue-400/30"
+        >
+          🛒 Ver Pedido 
+          <span className="bg-white text-blue-600 px-2 py-0.5 rounded-full text-sm">
+            {carrito.reduce((acc, item) => acc + item.cantidadPacks, 0)}
+          </span>
+        </button>
+      )}
+
     </div>
   );
 }
