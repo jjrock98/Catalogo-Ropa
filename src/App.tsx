@@ -54,7 +54,7 @@ export default function App() {
   const [configTienda, setConfigTienda] = useState<ConfiguracionTienda>({
     telefono: "5491122334455",
     aliasMP: "claros.javier",
-    direccion: "Av. Ejemplo 123, Lomas de Zamora", // Dirección por defecto
+    direccion: "",
     descripcionUbicacion: "",
     mapaIframe: "" 
   });
@@ -105,15 +105,12 @@ export default function App() {
 
   const enviarPedidoWhatsApp = () => {
     if (carrito.length === 0) return;
-    
-    // Validación: Si no es retiro, la dirección es obligatoria
     if (!nombreCliente.trim() || (metodoEnvio !== 'Retiro' && !direccionCliente.trim())) {
       toast.error("Por favor, completa tus datos antes de continuar.");
       return;
     }
 
     let mensaje = "🙌 *¡Hola! Quiero realizar un pedido en Claros Importados* 🛒\n\n";
-    
     mensaje += "👤 *MIS DATOS:*\n";
     mensaje += `- *Nombre:* ${nombreCliente}\n`;
     
@@ -124,7 +121,6 @@ export default function App() {
       mensaje += `- *Dirección:* ${direccionCliente}\n`;
     }
     mensaje += "\n";
-
     mensaje += "✅ *PRODUCTOS EN STOCK:*\n";
     let total = 0;
     carrito.forEach(item => {
@@ -136,7 +132,6 @@ export default function App() {
     mensaje += `\n💰 *TOTAL PRODUCTOS:* $${total}\n`;
     mensaje += `📌 *ALIAS MP:* ${configTienda.aliasMP}\n`;
     mensaje += `🏦 *CBU:* 0000000000000000000000\n\n`;
-
     mensaje += "🚀 _Aguardo confirmación de stock para realizar el pago._";
 
     const num = configTienda.telefono.replace(/\D/g, '');
@@ -151,6 +146,11 @@ export default function App() {
     }, 100);
   };
 
+  const abrirWhatsAppDirecto = () => {
+    const num = configTienda.telefono.replace(/\D/g, '');
+    window.open(`https://wa.me/${num}`, '_blank');
+  };
+
   // --- ESTILOS ---
   const themeBg = modoOscuro ? "bg-slate-900 text-slate-100" : "bg-slate-50 text-slate-900";
   const cardBg = modoOscuro ? "bg-slate-800/60 border-slate-700 backdrop-blur-md" : "bg-white/70 border-white shadow-xl backdrop-blur-md";
@@ -161,23 +161,27 @@ export default function App() {
     <div className={`min-h-screen transition-colors duration-500 pb-20 ${themeBg}`}>
       <Toaster position="bottom-center" richColors />
 
-      {/* HEADER / NAVBAR */}
+      {/* Estilo inyectado para que el mapa sea siempre responsivo */}
+      <style>{`
+        .mapa-container iframe {
+          width: 100% !important;
+          height: 100% !important;
+          border: 0;
+        }
+      `}</style>
+
       <header className={`sticky top-0 z-40 w-full border-b backdrop-blur-lg ${modoOscuro ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-slate-200'}`}>
         <div className="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
           <div className="flex flex-col">
             <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent leading-none">CLAROS</h1>
             <span className="text-[10px] tracking-[0.3em] font-bold opacity-50 uppercase">Importados</span>
           </div>
-
           <div className="flex items-center gap-4">
             <button onClick={() => setModoOscuro(!modoOscuro)} className="text-xl">
               {modoOscuro ? '☀️' : '🌙'}
             </button>
             <div className="relative">
-              <button 
-                onClick={() => setMenuAbierto(!menuAbierto)}
-                className="bg-blue-600 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/30 active:scale-95 transition"
-              >
+              <button onClick={() => setMenuAbierto(!menuAbierto)} className="bg-blue-600 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/30 active:scale-95 transition">
                 Menú {menuAbierto ? '✕' : '☰'}
               </button>
               {menuAbierto && (
@@ -194,7 +198,6 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {vistaActiva === 'catalogo' ? (
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* LISTA DE PRODUCTOS */}
             <div className="flex-1">
               <div className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
                 {['Todas', ...new Set(productos.map(p => p.categoria))].map(cat => (
@@ -222,7 +225,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* CARRITO Y FORMULARIO */}
             <aside id="carrito-seccion" className="w-full lg:w-96">
               <div className={`sticky top-28 p-8 rounded-[2.5rem] border ${cardBg}`}>
                 <h2 className="text-3xl font-black mb-8">MI PEDIDO</h2>
@@ -238,42 +240,23 @@ export default function App() {
                         </div>
                       ))}
                     </div>
-                    
                     <div className="space-y-3 bg-slate-500/5 p-5 rounded-[2rem] border border-slate-500/10 mb-6">
                         <p className="text-[10px] font-black opacity-50 uppercase ml-2">Datos de entrega</p>
-                        <input 
-                          type="text" 
-                          placeholder="Nombre Completo" 
-                          value={nombreCliente}
-                          onChange={(e) => setNombreCliente(e.target.value)}
-                          className="w-full bg-white/50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                        <select 
-                          value={metodoEnvio}
-                          onChange={(e) => setMetodoEnvio(e.target.value)}
-                          className="w-full bg-white/50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
+                        <input type="text" placeholder="Nombre Completo" value={nombreCliente} onChange={(e) => setNombreCliente(e.target.value)} className="w-full bg-white/50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <select value={metodoEnvio} onChange={(e) => setMetodoEnvio(e.target.value)} className="w-full bg-white/50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                           <option value="Moto">Envío por Moto</option>
                           <option value="Correo">Envío por Correo</option>
                           <option value="Retiro">Retiro en Local</option>
                         </select>
-
-                        {/* LÓGICA CONDICIONAL: DIRECCIÓN VS LOCAL */}
                         {metodoEnvio === 'Retiro' ? (
                           <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20">
                             <p className="text-[10px] font-bold text-blue-600 uppercase">Punto de retiro:</p>
                             <p className="text-xs font-bold">{configTienda.direccion}</p>
                           </div>
                         ) : (
-                          <textarea 
-                            placeholder="Dirección, Localidad y Código Postal" 
-                            value={direccionCliente}
-                            onChange={(e) => setDireccionCliente(e.target.value)}
-                            className="w-full bg-white/50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px]"
-                          />
+                          <textarea placeholder="Dirección, Localidad y Código Postal" value={direccionCliente} onChange={(e) => setDireccionCliente(e.target.value)} className="w-full bg-white/50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px]" />
                         )}
                     </div>
-
                     <div className="flex justify-between items-end mb-6">
                       <span className="font-bold opacity-50">TOTAL</span>
                       <span className="text-4xl font-black text-green-500">${carrito.reduce((acc, i) => acc + (i.precioAplicado * i.cantidadPacks), 0)}</span>
@@ -285,43 +268,11 @@ export default function App() {
             </aside>
           </div>
         ) : (
-          /* VISTA CONTACTO ACTUALIZADA CON MAPA */
-          <div className="text-center py-10 max-w-4xl mx-auto flex flex-col items-center">
-             <h2 className="text-4xl font-black mb-2">Contacto</h2>
-             <p className="text-xl font-medium opacity-80 mb-8">{configTienda.direccion}</p>
+          /* VISTA CONTACTO ACTUALIZADA */
+          <div className="text-center py-10 max-w-4xl mx-auto flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <h2 className="text-4xl font-black mb-6">Contacto</h2>
              
-             {/* Renderizado del iframe de Google Maps */}
-             {configTienda.mapaIframe ? (
-               <div 
-                 className="w-full h-96 rounded-[2rem] overflow-hidden shadow-xl border border-slate-500/20 bg-slate-500/5"
-                 dangerouslySetInnerHTML={{ __html: configTienda.mapaIframe }}
-               />
-             ) : (
-               <div className="w-full h-96 rounded-[2rem] border-2 border-dashed border-slate-500/30 flex items-center justify-center opacity-50">
-                 <p>El mapa aún no ha sido cargado en Sanity</p>
-               </div>
-             )}
-
-             <button onClick={() => setVistaActiva('catalogo')} className="mt-10 px-8 py-3 rounded-2xl bg-slate-500/10 hover:bg-slate-500/20 font-bold transition">
-               ← Volver al catálogo
-             </button>
-          </div>
-        )}
-      </main>
-
-      {/* BOTÓN FLOTANTE DEL CARRITO */}
-      {carrito.length > 0 && vistaActiva === 'catalogo' && (
-        <button
-          onClick={irAlCarrito}
-          className="fixed bottom-6 right-6 md:hidden bg-blue-600 text-white px-6 py-4 rounded-full shadow-[0_10px_40px_-10px_rgba(37,99,235,1)] z-50 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 font-black text-lg border-2 border-blue-400/30"
-        >
-          🛒 Ver Pedido 
-          <span className="bg-white text-blue-600 px-2 py-0.5 rounded-full text-sm">
-            {carrito.reduce((acc, item) => acc + item.cantidadPacks, 0)}
-          </span>
-        </button>
-      )}
-
-    </div>
-  );
-}
+             {/* BOTÓN WHATSAPP DIRECTO */}
+             <button 
+               onClick={abrirWhatsAppDirecto}
+               className="mb-10 bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-3xl font-black flex items-center gap-3 shadow-xl shadow-green-500/20 transition-all hover:scale-105 active:scale-95"
