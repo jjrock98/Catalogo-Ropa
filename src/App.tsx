@@ -140,7 +140,7 @@ function App() {
       mensaje += "\n📦 ENCARGOS POR PEDIDO:\n";
       itemsEncargo.forEach(item => {
         // Usamos item.nombre con un fallback por si Sanity devuelve null
-        const nombrePrenda = item.nombre || "Prenda sin nombre";
+        const nombrePrenda = item.nombre || (item as any).name || "Producto seleccionado";
         mensaje += `- ${item.cantidadPacks}x ${item.tipoVenta} de ${nombrePrenda.toUpperCase()}\n`;
       });
       mensaje += "\nAguardo confirmación para coordinar.";
