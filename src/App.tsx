@@ -280,7 +280,7 @@ export default function App() {
                           />
                           <input 
                             type="text" 
-                            placeholder="Localidad" 
+                            placeholder="Dirección" 
                             value={localidadCliente}
                             onChange={(e) => setLocalidadCliente(e.target.value)}
                             className="w-full bg-white/50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
