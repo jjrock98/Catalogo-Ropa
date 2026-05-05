@@ -1,7 +1,7 @@
 import { createClient } from '@sanity/client';
 import { useState, useEffect } from 'react';
 import { Toaster, toast } from 'sonner';
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/react"
 
 const client = createClient({
   projectId: 'hwujeebe',
