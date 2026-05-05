@@ -46,6 +46,11 @@ export default function App() {
   const [vistaActiva, setVistaActiva] = useState<'catalogo' | 'contacto'>('catalogo');
   const [menuAbierto, setMenuAbierto] = useState<boolean>(false);
 
+  // AGREGAR ESTOS 3 AQUÍ:
+  const [nombreCliente, setNombreCliente] = useState('');
+  const [localidadCliente, setLocalidadCliente] = useState('');
+  const [metodoEnvio, setMetodoEnvio] = useState('Moto');
+
   const [configTienda, setConfigTienda] = useState<ConfiguracionTienda>({
     telefono: "5491122334455",
     aliasMP: "claros.javier",
@@ -166,6 +171,33 @@ export default function App() {
     }, 100);
   };
 
+  // AGREGAR FUNCIÓN AQUÍ:
+  const enviarPedidoWhatsApp = () => {
+    if (carrito.length === 0) return;
+    if (!nombreCliente || !localidadCliente) {
+      toast.error("Por favor, completá tu nombre y localidad");
+      return;
+    }
+
+    let mensaje = "🙌 *¡Hola! Quiero realizar un pedido en Claros Importados* 🛒\n\n";
+    
+    mensaje += "👤 *MIS DATOS:*\n";
+    mensaje += `- *Nombre:* ${nombreCliente}\n`;
+    mensaje += `- *Localidad:* ${localidadCliente}\n`;
+    mensaje += `- *Envío:* ${metodoEnvio}\n\n`;
+
+    // Lógica del carrito
+    mensaje += "🛍️ *DETALLE DEL PEDIDO:*\n";
+    carrito.forEach(item => {
+      mensaje += `- ${item.cantidadPacks}x ${item.tipoVenta} de ${item.nombre} ($${item.precioAplicado * item.cantidadPacks})\n`;
+    });
+
+    const total = carrito.reduce((acc, i) => acc + (i.precioAplicado * i.cantidadPacks), 0);
+    mensaje += `\n💰 *TOTAL A PAGAR: $${total}*`;
+
+    window.open(`https://wa.me/${configTienda.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(mensaje)}`, '_blank');
+  };
+
   // --- ESTILOS ---
   const themeBg = modoOscuro ? "bg-slate-900 text-slate-100" : "bg-slate-50 text-slate-900";
   const cardBg = modoOscuro ? "bg-slate-800/60 border-slate-700 backdrop-blur-md" : "bg-white/70 border-white shadow-xl backdrop-blur-md";
@@ -283,6 +315,32 @@ export default function App() {
                       ))}
                     </div>
                     <div className="border-t border-slate-500/20 pt-6">
+                      <div className="space-y-3 mb-6 bg-slate-500/5 p-4 rounded-3xl border border-slate-500/10">
+                          <p className="text-xs font-black opacity-50 uppercase ml-2">Datos de Entrega</p>
+                          <input 
+                            type="text" 
+                            placeholder="Tu Nombre" 
+                            value={nombreCliente}
+                            onChange={(e) => setNombreCliente(e.target.value)}
+                            className="w-full bg-white/50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
+                          />
+                          <input 
+                            type="text" 
+                            placeholder="Localidad" 
+                            value={localidadCliente}
+                            onChange={(e) => setLocalidadCliente(e.target.value)}
+                            className="w-full bg-white/50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
+                          />
+                          <select 
+                            value={metodoEnvio}
+                            onChange={(e) => setMetodoEnvio(e.target.value)}
+                            className="w-full bg-white/50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
+                          >
+                            <option value="Moto">Envío por Moto</option>
+                            <option value="Correo">Envío por Correo</option>
+                            <option value="Retiro">Retiro en Local</option>
+                          </select>
+                        </div>
                       <div className="flex justify-between items-end mb-8">
                         <span className="font-bold opacity-50">SUBTOTAL</span>
                         <span className="text-4xl font-black text-green-500">${carrito.reduce((acc, i) => acc + (i.precioAplicado * i.cantidadPacks), 0)}</span>
