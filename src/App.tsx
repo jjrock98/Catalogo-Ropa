@@ -149,47 +149,55 @@ function App() {
   };
 
   const enviarPedidoWhatsApp = () => {
-    if (carrito.length === 0) return;
+  if (carrito.length === 0) {
+    toast.error("El carrito está vacío");
+    return;
+  }
 
-    // --- 1. CONSTRUCCIÓN DEL TEXTO ---
-    // Usamos '\n' para saltos de línea limpios dentro de JavaScript
-    let texto = "Hola! Quiero realizar el siguiente pedido:\n\n";
-    let total = 0;
+  // 1. Iniciamos el mensaje con texto plano y saltos de línea estándar
+  let mensaje = "Hola! Quiero realizar el siguiente pedido:\n\n";
 
-    const itemsStock = carrito.filter(item => item.tipoStock === 'con_stock');
-    const itemsEncargo = carrito.filter(item => item.tipoStock === 'a_pedido');
+  // 2. Filtramos los grupos
+  const conStock = carrito.filter(item => item.tipoStock === 'con_stock');
+  const aPedido = carrito.filter(item => item.tipoStock === 'a_pedido');
 
-    // SECCIÓN A: Productos que sí tienen stock
-    if (itemsStock.length > 0) {
-      texto += "✅ *PRODUCTOS EN STOCK (Para abonar ahora):*\n";
-      itemsStock.forEach(item => {
-        const subtotal = item.precioAplicado * item.cantidadPacks;
-        // Agregamos el nombre y modelo correctamente
-        texto += `- ${item.cantidadPacks}x ${item.tipoVenta} de ${item.nombre} ($${subtotal})\n`;
-        total += subtotal;
-      });
-      texto += `\n*Total a abonar: $${total}*\n`;
-      texto += `💳 *Datos para transferencia:*\nAlias: ${configTienda.aliasMP}\n\n`;
-    }
+  // 3. Procesamos productos con STOCK
+  if (conStock.length > 0) {
+    mensaje += "✅ PRODUCTOS EN STOCK:\n";
+    let subtotalStock = 0;
+    
+    conStock.forEach(item => {
+      const precioTotalItem = item.precioAplicado * item.cantidadPacks;
+      mensaje += `- ${item.cantidadPacks}x ${item.tipoVenta} de ${item.nombre} ($${precioTotalItem})\n`;
+      subtotalStock += precioTotalItem;
+    });
+    
+    mensaje += `TOTAL STOCK: $${subtotalStock}\n`;
+    mensaje += `Alias MP: ${configTienda.aliasMP}\n\n`;
+  }
 
-    // SECCIÓN B: Encargos a pedido (Lo que te está fallando ahora)
-    if (itemsEncargo.length > 0) {
-      texto += "📦 *ENCARGOS A PEDIDO (Pago a coordinar):*\n";
-      itemsEncargo.forEach(item => {
-        // AQUÍ ESTÁ LA CLAVE: Agregamos el nombre y modelo del encargo
-        texto += `- ${item.cantidadPacks}x ${item.tipoVenta} de ${item.nombre}\n`;
-      });
-      texto += "\nAguardo confirmación para coordinar los encargos.";
-    }
+  // 4. Procesamos productos A PEDIDO (Los que te están fallando)
+  if (aPedido.length > 0) {
+    mensaje += "📦 ENCARGOS A PEDIDO:\n";
+    
+    aPedido.forEach(item => {
+      // Usamos trim() para limpiar el nombre por si trae caracteres extraños de Sanity
+      const nombreLimpio = item.nombre ? item.nombre.trim() : "Producto sin nombre";
+      mensaje += `- ${item.cantidadPacks}x ${item.tipoVenta} de ${nombreLimpio}\n`;
+    });
+    
+    mensaje += "\nAguardo confirmación para coordinar el pago de los encargos.";
+  }
 
-    // --- 2. CODIFICACIÓN SEGURA PARA LA URL ---
-    // Esta función transforma espacios, emojis, acentos y saltos de línea (\n)
-    // en un formato que el navegador y WhatsApp entienden perfectamente sin cortarse.
-    const textoCodificadoForUrl = encodeURIComponent(texto);
+  // 5. LA PARTE CRÍTICA: La codificación
+  // Eliminamos emojis conflictivos en la URL si fuera necesario, 
+  // pero encodeURIComponent debería manejarlos. 
+  const urlFinal = `https://wa.me/${configTienda.telefono}?text=${encodeURIComponent(mensaje)}`;
 
-    // --- 3. ENVÍO ---
-    window.open(`https://wa.me/${configTienda.telefono}?text=${textoCodificadoForUrl}`, '_blank');
-  };
+  // Abrimos la ventana
+  window.open(urlFinal, '_blank');
+};
+
 
 
 
