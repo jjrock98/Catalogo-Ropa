@@ -14,7 +14,6 @@ interface Producto {
   id: string;
   nombre: string;
   descripcion?: string;
-  colores?: string[];
   tipoStock: 'a_pedido' | 'con_stock';
   cantidadStock?: number;
   precioMediaDocena: number;
@@ -44,45 +43,28 @@ export default function App() {
   const [cargando, setCargando] = useState<boolean>(true);
   const [categoriaActiva, setCategoriaActiva] = useState<string>('Todas');
   const [modoOscuro, setModoOscuro] = useState<boolean>(false);
-  const [productoAmpliando, setProductoAmpliando] = useState<Producto | null>(null);
-  const [indiceImagenModal, setIndiceImagenModal] = useState<number>(0);
+  const [vistaActiva, setVistaActiva] = useState<'catalogo' | 'contacto'>('catalogo');
+  const [menuAbierto, setMenuAbierto] = useState<boolean>(false);
 
   const [configTienda, setConfigTienda] = useState<ConfiguracionTienda>({
     telefono: "5491122334455",
     aliasMP: "claros.javier",
-    direccion: "Cargando dirección...",
-    descripcionUbicacion: "Visítanos en nuestra tienda física.",
+    direccion: "",
+    descripcionUbicacion: "",
     mapaIframe: "" 
   });
 
   useEffect(() => {
     const obtenerDatos = async () => {
       try {
-        const configData = await client.fetch(`*[_type == "configuracion"][0]{
-          telefono, 
-          aliasMP, 
-          direccion, 
-          descripcionUbicacion, 
-          mapaIframe
-        }`);
-        
-        if (configData) {
-          setConfigTienda({
-            telefono: configData.telefono || "5491122334455",
-            aliasMP: configData.aliasMP || "claros.javier",
-            direccion: configData.direccion || "Buenos Aires, Argentina",
-            descripcionUbicacion: configData.descripcionUbicacion || "Venta de indumentaria importada.",
-            mapaIframe: configData.mapaIframe
-          });
-        }
+        const configData = await client.fetch(`*[_type == "configuracion"][0]`);
+        if (configData) setConfigTienda(configData);
 
         const dataProductos = await client.fetch(`*[_type == "producto"]{
           "id": _id,
           "nombre": name,
           "descripcion": description,
-          "colores": colors,
           "tipoStock": tipoStock,
-          "cantidadStock": cantidadStock,
           "precioMediaDocena": precioMediaDocena,
           "precioDocena": precioDocena,
           "categoria": category,
@@ -90,7 +72,7 @@ export default function App() {
         }`);
         setProductos(dataProductos);
       } catch (error) {
-        console.error("Error al traer datos:", error);
+        console.error("Error cargando datos:", error);
       } finally {
         setCargando(false);
       }
@@ -100,238 +82,222 @@ export default function App() {
 
   const agregarAlCarrito = (producto: Producto, tipoVenta: 'Media Docena' | 'Docena') => {
     const idCart = `${producto.id}-${tipoVenta}`;
-    const unidadesPorPack = tipoVenta === 'Media Docena' ? 6 : 12;
-    const precioPack = producto.tipoStock === 'a_pedido' ? 0 : (tipoVenta === 'Media Docena' ? producto.precioMediaDocena : producto.precioDocena);
-
-    setCarrito((carritoActual) => {
-      const unidadesYaEnCarrito = carritoActual
-        .filter(item => item.id === producto.id)
-        .reduce((acc, item) => acc + (item.tipoVenta === 'Media Docena' ? 6 : 12) * item.cantidadPacks, 0);
-
-      if (producto.tipoStock === 'con_stock') {
-        const stockDisponible = producto.cantidadStock || 0;
-        if (unidadesYaEnCarrito + unidadesPorPack > stockDisponible) {
-          toast.error(`No hay suficiente stock.`);
-          return carritoActual;
-        }
-      }
-
-      const itemExiste = carritoActual.find(item => item.idCart === idCart);
-      if (itemExiste) {
+    const precio = tipoVenta === 'Media Docena' ? producto.precioMediaDocena : producto.precioDocena;
+    setCarrito((prev) => {
+      const existe = prev.find(item => item.idCart === idCart);
+      if (existe) {
         toast.success(`Sumaste otra ${tipoVenta}`);
-        return carritoActual.map(item => item.idCart === idCart ? { ...item, cantidadPacks: item.cantidadPacks + 1 } : item);
-      } else {
-        toast.success(`Agregado al pedido`);
-        return [...carritoActual, { ...producto, idCart, tipoVenta, cantidadPacks: 1, precioAplicado: precioPack }];
+        return prev.map(item => item.idCart === idCart ? { ...item, cantidadPacks: item.cantidadPacks + 1 } : item);
       }
+      toast.success(`Agregado al pedido`);
+      return [...prev, { ...producto, idCart, tipoVenta, cantidadPacks: 1, precioAplicado: precio }];
     });
   };
 
   const restarDelCarrito = (idCart: string) => {
-    setCarrito((carritoActual) => {
-      const itemExiste = carritoActual.find(item => item.idCart === idCart);
-      if (itemExiste?.cantidadPacks === 1) {
-        return carritoActual.filter(item => item.idCart !== idCart);
-      } else {
-        return carritoActual.map(item => item.idCart === idCart ? { ...item, cantidadPacks: item.cantidadPacks - 1 } : item);
-      }
-    });
+    setCarrito((prev) => prev.map(item => item.idCart === idCart ? { ...item, cantidadPacks: item.cantidadPacks - 1 } : item).filter(item => item.cantidadPacks > 0));
   };
 
-  const enviarPedidoWhatsApp = () => {
-    if (carrito.length === 0) return;
-    let mensaje = "Hola! Quiero realizar el siguiente pedido:\n";
-    const itemsStock = carrito.filter(item => item.tipoStock === 'con_stock');
-    const itemsEncargo = carrito.filter(item => item.tipoStock === 'a_pedido');
-
-    if (itemsStock.length > 0) {
-      mensaje += "\n✅ PRODUCTOS EN STOCK:\n";
-      let totalS = 0;
-      itemsStock.forEach(item => {
-        const sub = item.precioAplicado * item.cantidadPacks;
-        mensaje += `- ${item.cantidadPacks}x ${item.tipoVenta} de ${item.nombre} ($${sub})\n`;
-        totalS += sub;
-      });
-      mensaje += `TOTAL: $${totalS}\nAlias: ${configTienda.aliasMP}\n`;
-    }
-
-    if (itemsEncargo.length > 0) {
-      mensaje += "\n📦 ENCARGOS POR PEDIDO:\n";
-      itemsEncargo.forEach(item => {
-        mensaje += `- ${item.cantidadPacks}x ${item.tipoVenta} de ${item.nombre.toUpperCase()}\n`;
-      });
-    }
-
-    const num = configTienda.telefono.replace(/\D/g, '');
-    window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(mensaje)}`, '_blank');
-  };
-
-  const abrirModal = (producto: Producto) => {
-    if (producto.imagenes?.length) {
-      setProductoAmpliando(producto);
-      setIndiceImagenModal(0);
-    }
-  };
-
-  // Función para bajar suavemente al carrito
   const irAlCarrito = () => {
-    const seccion = document.getElementById('carrito-seccion');
-    seccion?.scrollIntoView({ behavior: 'smooth' });
+    setVistaActiva('catalogo');
+    setTimeout(() => {
+      document.getElementById('carrito-seccion')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
-  const totalItems = carrito.reduce((acc, item) => acc + item.cantidadPacks, 0);
+  // --- ESTILOS ---
+  const themeBg = modoOscuro ? "bg-slate-900 text-slate-100" : "bg-slate-50 text-slate-900";
+  const cardBg = modoOscuro ? "bg-slate-800/60 border-slate-700 backdrop-blur-md" : "bg-white/70 border-white shadow-xl backdrop-blur-md";
 
-  const themeBg = modoOscuro 
-    ? "bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-[#111827] to-black" 
-    : "bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-50 via-gray-100 to-[#e2e8f0]";
-  const themeText = modoOscuro ? "text-gray-100" : "text-gray-800";
-  const cardBg = modoOscuro 
-    ? "bg-gray-800/40 backdrop-blur-xl border-gray-700/50 shadow-2xl" 
-    : "bg-white/60 backdrop-blur-xl border-white shadow-2xl shadow-slate-300/40";
-
-  if (cargando) return <div className={`min-h-screen flex items-center justify-center text-2xl font-light ${themeBg} ${themeText}`}>Cargando catálogo...</div>;
-
-  const categoriasUnicas = ['Todas', ...Array.from(new Set(productos.map(p => p.categoria)))].filter(Boolean);
-  const productosMostrados = categoriaActiva === 'Todas' ? productos : productos.filter(p => p.categoria === categoriaActiva);
+  if (cargando) return <div className={`h-screen flex items-center justify-center font-bold ${themeBg}`}>Cargando catálogo...</div>;
 
   return (
-    <div className={`min-h-screen p-4 md:p-8 flex flex-col lg:flex-row gap-8 transition-colors duration-500 ${themeBg} ${themeText}`}>
-      <Toaster position="bottom-right" richColors />
+    <div className={`min-h-screen transition-colors duration-500 pb-20 ${themeBg}`}>
+      <Toaster position="bottom-center" richColors />
 
-      {/* BOTÓN FLOTANTE DEL CARRITO */}
-      {carrito.length > 0 && (
-        <button 
-          onClick={irAlCarrito}
-          className="fixed bottom-6 right-6 z-50 flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-full shadow-2xl shadow-blue-500/40 hover:scale-110 active:scale-95 transition-all animate-bounce md:animate-none"
-        >
-          <div className="relative">
-            <span className="text-3xl">🛒</span>
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-white">
-              {totalItems}
-            </span>
+      {/* HEADER / NAVBAR */}
+      <header className={`sticky top-0 z-40 w-full border-b backdrop-blur-lg ${modoOscuro ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-slate-200'}`}>
+        <div className="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent leading-none">CLAROS</h1>
+            <span className="text-[10px] tracking-[0.3em] font-bold opacity-50 uppercase">Importados</span>
           </div>
-        </button>
-      )}
 
-      {/* SECCIÓN PRODUCTOS */}
-      <div className="w-full lg:w-2/3 xl:w-3/4">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
-          <div>
-            <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600">
-              Claros Importados
-            </h1>
-            <p className={`text-sm tracking-widest uppercase mt-2 font-medium ${modoOscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-              Catálogo Mayorista Premium
-            </p>
-          </div>
-          <button 
-            onClick={() => setModoOscuro(!modoOscuro)} 
-            className={`p-2 px-6 rounded-full border transition-all duration-300 font-medium shadow-lg ${modoOscuro ? 'border-gray-600 bg-gray-800/80 text-yellow-300' : 'border-gray-200 bg-white/80 text-gray-700'}`}
-          >
-            {modoOscuro ? '☀️ Modo Día' : '🌙 Modo Noche'}
-          </button>
-        </div>
-
-        <div className="flex gap-3 mb-10 overflow-x-auto pb-4 scrollbar-hide">
-          {categoriasUnicas.map(cat => (
-            <button 
-              key={cat} 
-              onClick={() => setCategoriaActiva(cat)} 
-              className={`px-6 py-2.5 rounded-full font-semibold transition-all duration-300 shadow-md ${categoriaActiva === cat ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white' : (modoOscuro ? 'bg-gray-800/60 text-gray-300 border border-gray-700' : 'bg-white/60 text-gray-600 border border-gray-200')}`}
-            >
-              {cat}
+          <div className="flex items-center gap-4">
+            <button onClick={() => setModoOscuro(!modoOscuro)} className="text-xl">
+              {modoOscuro ? '☀️' : '🌙'}
             </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mb-12">
-          {productosMostrados.map((prod) => (
-            <div key={prod.id} className={`rounded-3xl overflow-hidden flex flex-col border transition-all duration-300 hover:-translate-y-2 ${cardBg}`}>
-              <div className="relative cursor-pointer group overflow-hidden" onClick={() => abrirModal(prod)}>
-                {prod.imagenes?.length ? (
-                  <img src={prod.imagenes[0]} alt={prod.nombre} className="w-full h-72 object-cover transition-transform duration-700 group-hover:scale-110" />
-                ) : (
-                  <div className="w-full h-72 bg-gray-200/50 flex items-center justify-center">Sin imagen</div>
-                )}
-                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-white text-4xl">🔍</span>
-                </div>
-              </div>
-              <div className="p-6 flex flex-col flex-grow">
-                <span className="text-xs font-bold text-indigo-500 uppercase mb-1">{prod.categoria}</span>
-                <h2 className={`text-2xl font-bold mb-2 ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>{prod.nombre}</h2>
-                {prod.descripcion && (
-                  <p className={`text-sm mb-4 line-clamp-3 leading-relaxed ${modoOscuro ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {prod.descripcion}
-                  </p>
-                )}
-                <div className="mt-auto pt-4 flex flex-col gap-3">
-                   <div className={`flex justify-between items-center p-3 rounded-xl ${modoOscuro ? 'bg-gray-800/50' : 'bg-gray-50'}`}>
-                      <span className="text-sm">Media Docena: <br/><b className="text-green-500 text-lg">${prod.precioMediaDocena}</b></span>
-                      <button onClick={() => agregarAlCarrito(prod, 'Media Docena')} className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold hover:scale-110 transition-all">+</button>
-                   </div>
-                   <div className={`flex justify-between items-center p-3 rounded-xl ${modoOscuro ? 'bg-gray-800/50' : 'bg-gray-50'}`}>
-                      <span className="text-sm">Docena: <br/><b className="text-green-500 text-lg">${prod.precioDocena}</b></span>
-                      <button onClick={() => agregarAlCarrito(prod, 'Docena')} className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold hover:scale-110 transition-all">+</button>
-                   </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* SECCIÓN CARRITO */}
-      <div id="carrito-seccion" className="w-full lg:w-1/3 xl:w-1/4">
-        <div className={`sticky top-8 rounded-3xl p-6 border ${cardBg}`}>
-          <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">🛒 Tu Pedido</h3>
-          {carrito.length === 0 ? (
-            <p className="text-center py-10 italic opacity-50">El carrito está vacío</p>
-          ) : (
-            <div className="flex flex-col gap-4 max-h-[50vh] overflow-y-auto pr-2">
-              {carrito.map((item, index) => (
-                <div key={index} className={`p-4 rounded-2xl flex justify-between items-center border ${modoOscuro ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
-                  <div>
-                    <p className="font-bold text-sm">{item.nombre}</p>
-                    <p className="text-xs opacity-60">{item.cantidadPacks}x {item.tipoVenta}</p>
-                    <p className="text-green-500 font-semibold text-sm">${item.precioAplicado * item.cantidadPacks}</p>
-                  </div>
-                  <button onClick={() => restarDelCarrito(item.idCart)} className="bg-red-100 text-red-600 w-8 h-8 rounded-full flex items-center justify-center font-bold hover:bg-red-200 transition-colors">-</button>
-                </div>
-              ))}
-            </div>
-          )}
-          {carrito.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-gray-500/20">
-              <div className="flex justify-between items-center mb-6">
-                <span className="text-lg">Total:</span>
-                <span className="text-3xl font-extrabold text-green-500">
-                  ${carrito.reduce((acc, item) => acc + (item.precioAplicado * item.cantidadPacks), 0)}
-                </span>
-              </div>
-              <button onClick={enviarPedidoWhatsApp} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:scale-[1.02] transition-transform text-lg">
-                Enviar por WhatsApp
+            
+            {/* BOTÓN MENÚ DESPLEGABLE */}
+            <div className="relative">
+              <button 
+                onClick={() => setMenuAbierto(!menuAbierto)}
+                className="bg-blue-600 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/30 active:scale-95 transition"
+              >
+                Menú {menuAbierto ? '✕' : '☰'}
               </button>
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* MODAL IMÁGENES */}
-      {productoAmpliando && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setProductoAmpliando(null)}>
-          <div className="relative max-w-4xl w-full flex flex-col items-center" onClick={e => e.stopPropagation()}>
-            <button className="absolute -top-12 right-0 text-white text-4xl" onClick={() => setProductoAmpliando(null)}>&times;</button>
-            <img src={productoAmpliando.imagenes![indiceImagenModal]} className="max-h-[80vh] rounded-xl shadow-2xl" />
-            {productoAmpliando.imagenes!.length > 1 && (
-              <div className="flex gap-4 mt-6">
-                {productoAmpliando.imagenes!.map((img, idx) => (
-                  <img key={idx} src={img} className={`h-16 w-16 object-cover rounded-lg cursor-pointer border-2 ${idx === indiceImagenModal ? 'border-blue-500' : 'border-transparent'}`} onClick={() => setIndiceImagenModal(idx)} />
+              {menuAbierto && (
+                <div className={`absolute right-0 mt-3 w-56 rounded-3xl border p-2 shadow-2xl animate-in zoom-in-95 duration-200 ${cardBg}`}>
+                  <button 
+                    onClick={() => { setVistaActiva('catalogo'); setMenuAbierto(false); }}
+                    className={`w-full text-left p-4 rounded-2xl transition ${vistaActiva === 'catalogo' ? 'bg-blue-600 text-white' : 'hover:bg-slate-500/10'}`}
+                  >
+                    🛍️ Catálogo
+                  </button>
+                  <button 
+                    onClick={() => { setVistaActiva('contacto'); setMenuAbierto(false); }}
+                    className={`w-full text-left p-4 rounded-2xl transition ${vistaActiva === 'contacto' ? 'bg-blue-600 text-white' : 'hover:bg-slate-500/10'}`}
+                  >
+                    📍 Ubicación y Contacto
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* CONTENIDO PRINCIPAL */}
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        
+        {vistaActiva === 'catalogo' ? (
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* PRODUCTOS */}
+            <div className="flex-1">
+              <div className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
+                {['Todas', ...new Set(productos.map(p => p.categoria))].map(cat => (
+                  <button 
+                    key={cat} 
+                    onClick={() => setCategoriaActiva(cat)}
+                    className={`px-6 py-2.5 rounded-full font-bold whitespace-nowrap transition-all ${categoriaActiva === cat ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-slate-500/10 hover:bg-slate-500/20'}`}
+                  >
+                    {cat}
+                  </button>
                 ))}
               </div>
-            )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {productos.filter(p => categoriaActiva === 'Todas' || p.categoria === categoriaActiva).map(prod => (
+                  <div key={prod.id} className={`rounded-[2.5rem] overflow-hidden border p-5 transition-all hover:shadow-2xl ${cardBg}`}>
+                    {prod.imagenes && <img src={prod.imagenes[0]} className="w-full h-72 object-cover rounded-[1.8rem] mb-6 shadow-inner" alt={prod.nombre} />}
+                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-500 px-3 py-1 bg-blue-500/10 rounded-full">{prod.categoria}</span>
+                    <h3 className="text-2xl font-black mt-3 mb-2">{prod.nombre}</h3>
+                    <p className="text-sm opacity-60 mb-6 leading-relaxed line-clamp-3">{prod.descripcion || "Importado de calidad premium."}</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button onClick={() => agregarAlCarrito(prod, 'Media Docena')} className="flex flex-col items-center bg-slate-500/5 p-4 rounded-3xl hover:bg-blue-600 hover:text-white transition group">
+                        <span className="text-[10px] font-bold uppercase opacity-60 group-hover:opacity-100 text-center">Media Docena</span>
+                        <span className="text-lg font-black">${prod.precioMediaDocena}</span>
+                      </button>
+                      <button onClick={() => agregarAlCarrito(prod, 'Docena')} className="flex flex-col items-center bg-slate-500/5 p-4 rounded-3xl hover:bg-blue-600 hover:text-white transition group">
+                        <span className="text-[10px] font-bold uppercase opacity-60 group-hover:opacity-100 text-center">Docena</span>
+                        <span className="text-lg font-black">${prod.precioDocena}</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CARRITO (Lado derecho en PC, abajo en móvil) */}
+            <aside id="carrito-seccion" className="w-full lg:w-96">
+              <div className={`sticky top-28 p-8 rounded-[2.5rem] border ${cardBg}`}>
+                <h2 className="text-3xl font-black mb-8">MI PEDIDO</h2>
+                {carrito.length === 0 ? (
+                  <div className="text-center py-10 opacity-40 italic">Tu carrito está esperando...</div>
+                ) : (
+                  <>
+                    <div className="space-y-4 mb-8 max-h-[40vh] overflow-y-auto pr-2">
+                      {carrito.map(item => (
+                        <div key={item.idCart} className="flex justify-between items-center bg-slate-500/5 p-4 rounded-3xl">
+                          <div>
+                            <p className="font-black text-sm">{item.nombre}</p>
+                            <p className="text-xs opacity-50">{item.cantidadPacks}x {item.tipoVenta}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-blue-600">${item.precioAplicado * item.cantidadPacks}</span>
+                            <button onClick={() => restarDelCarrito(item.idCart)} className="w-8 h-8 rounded-full bg-red-500/10 text-red-500 font-bold hover:bg-red-500 hover:text-white transition">-</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="border-t border-slate-500/20 pt-6">
+                      <div className="flex justify-between items-end mb-8">
+                        <span className="font-bold opacity-50">SUBTOTAL</span>
+                        <span className="text-4xl font-black text-green-500">${carrito.reduce((acc, i) => acc + (i.precioAplicado * i.cantidadPacks), 0)}</span>
+                      </div>
+                      <button onClick={() => window.open(`https://wa.me/${configTienda.telefono.replace(/\D/g, '')}?text=Hola! Quiero este pedido:\n${carrito.map(i => `- ${i.cantidadPacks}x ${i.tipoVenta} de ${i.nombre}`).join('\n')}`, '_blank')} className="w-full bg-green-500 text-white font-black py-5 rounded-[1.8rem] shadow-xl shadow-green-500/30 hover:scale-[1.02] active:scale-95 transition">
+                        CONFIRMAR WHATSAPP
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </aside>
           </div>
-        </div>
+        ) : (
+          /* VISTA DE CONTACTO Y UBICACIÓN */
+          <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className={`p-8 md:p-12 rounded-[3rem] border ${cardBg}`}>
+              <h2 className="text-4xl md:text-5xl font-black mb-10 text-center">Nuestra Ubicación</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
+                <div className="space-y-8">
+                  <div className="flex gap-5">
+                    <span className="text-4xl bg-blue-500/10 p-4 rounded-3xl">📍</span>
+                    <div>
+                      <h4 className="font-black text-blue-500 uppercase tracking-tighter">Dirección Física</h4>
+                      <p className="text-2xl font-bold mt-1">{configTienda.direccion || "Buenos Aires, Argentina"}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-5">
+                    <span className="text-4xl bg-purple-500/10 p-4 rounded-3xl">🏬</span>
+                    <div>
+                      <h4 className="font-black text-purple-500 uppercase tracking-tighter">Local y Referencias</h4>
+                      <p className="text-lg opacity-80 leading-relaxed mt-1">{configTienda.descripcionUbicacion || "Consúltanos los detalles de pasillo y local."}</p>
+                    </div>
+                  </div>
+                  <div className="pt-6 border-t border-slate-500/20">
+                    <h4 className="font-black mb-4">Atención Directa</h4>
+                    <a 
+                      href={`https://wa.me/${configTienda.telefono.replace(/\D/g, '')}`}
+                      target="_blank"
+                      className="inline-flex items-center gap-3 bg-green-500 text-white px-8 py-4 rounded-2xl font-black hover:bg-green-600 shadow-xl shadow-green-500/20 transition"
+                    >
+                      <span>Hablar con nosotros</span>
+                      <span className="text-xl">💬</span>
+                    </a>
+                  </div>
+                </div>
+
+                <div className="rounded-[2rem] overflow-hidden min-h-[350px] shadow-2xl border-4 border-white/10">
+                  {configTienda.mapaIframe ? (
+                    <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: configTienda.mapaIframe.replace(/width="\d+"/, 'width="100%"').replace(/height="\d+"/, 'height="100%"') }} />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-500/10 italic">Cargando mapa...</div>
+                  )}
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setVistaActiva('catalogo')}
+                className="w-full p-4 rounded-2xl border-2 border-dashed border-slate-500/30 font-bold opacity-60 hover:opacity-100 hover:border-blue-500 hover:text-blue-500 transition"
+              >
+                ← Volver al catálogo de productos
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* CARRITO FLOTANTE (Móviles) */}
+      {carrito.length > 0 && vistaActiva === 'catalogo' && (
+        <button 
+          onClick={irAlCarrito}
+          className="fixed bottom-6 right-6 z-50 bg-blue-600 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-2xl animate-bounce lg:hidden"
+        >
+          🛒 <span className="absolute -top-1 -right-1 bg-red-500 text-[10px] w-6 h-6 flex items-center justify-center rounded-full border-2 border-white">{carrito.reduce((acc, i) => acc + i.cantidadPacks, 0)}</span>
+        </button>
       )}
     </div>
   );
