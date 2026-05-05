@@ -46,7 +46,7 @@ export default function App() {
   const [vistaActiva, setVistaActiva] = useState<'catalogo' | 'contacto'>('catalogo');
   const [menuAbierto, setMenuAbierto] = useState<boolean>(false);
 
-  // AGREGAR ESTOS 3 AQUÍ:
+  // ESTADOS DEL FORMULARIO
   const [nombreCliente, setNombreCliente] = useState('');
   const [localidadCliente, setLocalidadCliente] = useState('');
   const [metodoEnvio, setMetodoEnvio] = useState('Moto');
@@ -103,99 +103,50 @@ export default function App() {
     setCarrito((prev) => prev.map(item => item.idCart === idCart ? { ...item, cantidadPacks: item.cantidadPacks - 1 } : item).filter(item => item.cantidadPacks > 0));
   };
 
-  // ... (debajo de restarDelCarrito)
-
+  // --- FUNCIÓN ÚNICA PARA ENVIAR WHATSAPP ---
   const enviarPedidoWhatsApp = () => {
     if (carrito.length === 0) return;
+    
+    // Validación del formulario
+    if (!nombreCliente.trim() || !localidadCliente.trim()) {
+      toast.error("Por favor, completá tu nombre y localidad antes de confirmar.");
+      return;
+    }
 
-    // --- 1. ENCABEZADO ---
     let mensaje = "🙌 *¡Hola! Quiero realizar un pedido en Claros Importados* 🛒\n\n";
     
-    // --- DATOS DEL CLIENTE ---
+    // DATOS DEL CLIENTE (Tomados del formulario)
     mensaje += "👤 *MIS DATOS:*\n";
-    mensaje += "- *Nombre:* \n";
-    mensaje += "- *Localidad:* \n";
-    mensaje += "- *Envío:* (Moto / Correo / Retiro) \n\n";
+    mensaje += `- *Nombre:* ${nombreCliente}\n`;
+    mensaje += `- *Localidad:* ${localidadCliente}\n`;
+    mensaje += `- *Envío:* ${metodoEnvio}\n\n`;
 
-    const itemsStock = carrito.filter(item => item.tipoStock === 'con_stock');
-    const itemsEncargo = carrito.filter(item => item.tipoStock === 'a_pedido');
+    // PRODUCTOS Y CÁLCULOS
+    mensaje += "✅ *PRODUCTOS EN STOCK:*\n";
+    let total = 0;
+    carrito.forEach(item => {
+      const subtotal = item.precioAplicado * item.cantidadPacks;
+      mensaje += `• ${item.cantidadPacks}x ${item.tipoVenta} - *${item.nombre}* ($${subtotal})\n`;
+      total += subtotal;
+    });
 
-    // --- 2. SECCIÓN STOCK + EFECTO URGENCIA (Punto 2) ---
-    if (itemsStock.length > 0) {
-      mensaje += "✅ *PRODUCTOS EN STOCK:*\n";
-      let totalS = 0;
-      itemsStock.forEach(item => {
-        const sub = item.precioAplicado * item.cantidadPacks;
-        mensaje += `• ${item.cantidadPacks}x ${item.tipoVenta} - *${item.nombre}* ($${sub})\n`;
-        totalS += sub;
-      });
-      mensaje += `\n💰 *TOTAL PRODUCTOS:* $${totalS}\n`;
-      mensaje += `⚠️ _*Nota:* El stock se reserva por 30 min una vez enviado este mensaje._\n\n`; // <-- AQUÍ EL EFECTO URGENCIA
-    }
+    // TOTAL, ALIAS Y CBU
+    mensaje += `\n💰 *TOTAL PRODUCTOS:* $${total}\n`;
+    mensaje += `📌 *ALIAS MP:* ${configTienda.aliasMP}\n`;
+    mensaje += `🏦 *CBU:* 0000003100069342456100\n\n`; // <-- REEMPLAZA ESTOS CEROS CON TU CBU REAL
 
-    // --- 3. DATOS DE PAGO / CBU (Punto 3) ---
-    mensaje += `📌 *DATOS PARA EL PAGO:* \n`;
-    mensaje += `• *Alias:* ${configTienda.aliasMP}\n`;
-    mensaje += `• *Titular:* Javier Claros\n`; 
-    mensaje += `• *Banco:* Mercado Pago\n\n`;
-
-    // --- 4. INSTRUCCIÓN DE PAGO INMEDIATA (Punto 1) ---
-    mensaje += "💳 *PASOS PARA CONFIRMAR YA MISMO:* \n";
-    mensaje += "1. Completá tus datos arriba.\n";
-    mensaje += "2. Realizá la transferencia al Alias.\n";
-    mensaje += "3. Enviá el comprobante por este chat.\n";
-
-    // SECCIÓN ENCARGOS (Si los hay)
-    if (itemsEncargo.length > 0) {
-      mensaje += "\n📦 *ARTÍCULOS A PEDIDO:* (Se coordinan por separado)\n";
-      itemsEncargo.forEach(item => {
-        mensaje += `• ${item.cantidadPacks}x ${item.tipoVenta} - *${item.nombre.toUpperCase()}*\n`;
-      });
-    }
-
-    mensaje += "\n🚀 _¡En cuanto recibamos el comprobante preparamos tu despacho!_";
+    mensaje += "🚀 _Aguardo confirmación de stock para realizar el pago._";
 
     const num = configTienda.telefono.replace(/\D/g, '');
     const url = `https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');
   };
 
-
-// ... (después seguís con irAlCarrito)
-
-
   const irAlCarrito = () => {
     setVistaActiva('catalogo');
     setTimeout(() => {
       document.getElementById('carrito-seccion')?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
-  };
-
-  // AGREGAR FUNCIÓN AQUÍ:
-  const enviarPedidoWhatsApp = () => {
-    if (carrito.length === 0) return;
-    if (!nombreCliente || !localidadCliente) {
-      toast.error("Por favor, completá tu nombre y localidad");
-      return;
-    }
-
-    let mensaje = "🙌 *¡Hola! Quiero realizar un pedido en Claros Importados* 🛒\n\n";
-    
-    mensaje += "👤 *MIS DATOS:*\n";
-    mensaje += `- *Nombre:* ${nombreCliente}\n`;
-    mensaje += `- *Localidad:* ${localidadCliente}\n`;
-    mensaje += `- *Envío:* ${metodoEnvio}\n\n`;
-
-    // Lógica del carrito
-    mensaje += "🛍️ *DETALLE DEL PEDIDO:*\n";
-    carrito.forEach(item => {
-      mensaje += `- ${item.cantidadPacks}x ${item.tipoVenta} de ${item.nombre} ($${item.precioAplicado * item.cantidadPacks})\n`;
-    });
-
-    const total = carrito.reduce((acc, i) => acc + (i.precioAplicado * i.cantidadPacks), 0);
-    mensaje += `\n💰 *TOTAL A PAGAR: $${total}*`;
-
-    window.open(`https://wa.me/${configTienda.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(mensaje)}`, '_blank');
   };
 
   // --- ESTILOS ---
@@ -292,7 +243,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* CARRITO (Lado derecho en PC, abajo en móvil) */}
+            {/* CARRITO */}
             <aside id="carrito-seccion" className="w-full lg:w-96">
               <div className={`sticky top-28 p-8 rounded-[2.5rem] border ${cardBg}`}>
                 <h2 className="text-3xl font-black mb-8">MI PEDIDO</h2>
@@ -314,7 +265,10 @@ export default function App() {
                         </div>
                       ))}
                     </div>
+                    
                     <div className="border-t border-slate-500/20 pt-6">
+                      
+                      {/* FORMULARIO DE DATOS */}
                       <div className="space-y-3 mb-6 bg-slate-500/5 p-4 rounded-3xl border border-slate-500/10">
                           <p className="text-xs font-black opacity-50 uppercase ml-2">Datos de Entrega</p>
                           <input 
@@ -341,6 +295,8 @@ export default function App() {
                             <option value="Retiro">Retiro en Local</option>
                           </select>
                         </div>
+
+                      {/* SUBTOTAL Y BOTÓN */}
                       <div className="flex justify-between items-end mb-8">
                         <span className="font-bold opacity-50">SUBTOTAL</span>
                         <span className="text-4xl font-black text-green-500">${carrito.reduce((acc, i) => acc + (i.precioAplicado * i.cantidadPacks), 0)}</span>
