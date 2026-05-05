@@ -100,49 +100,61 @@ export default function App() {
 
   // ... (debajo de restarDelCarrito)
 
-const enviarPedidoWhatsApp = () => {
-  if (carrito.length === 0) return;
+  const enviarPedidoWhatsApp = () => {
+    if (carrito.length === 0) return;
 
-  // --- ENCABEZADO PROFESIONAL ---
-  let mensaje = "🙌 *¡Hola! Quiero realizar un pedido en Claros Importados* 🛒\n\n";
-  
-  // --- DATOS PARA AGILIZAR ---
-  mensaje += "👤 *MIS DATOS:*\n";
-  mensaje += "- *Nombre:* \n";
-  mensaje += "- *Localidad:* \n";
-  mensaje += "- *Envío:* (Moto / Correo / Retiro) \n\n";
+    // --- 1. ENCABEZADO ---
+    let mensaje = "🙌 *¡Hola! Quiero realizar un pedido en Claros Importados* 🛒\n\n";
+    
+    // --- DATOS DEL CLIENTE ---
+    mensaje += "👤 *MIS DATOS:*\n";
+    mensaje += "- *Nombre:* \n";
+    mensaje += "- *Localidad:* \n";
+    mensaje += "- *Envío:* (Moto / Correo / Retiro) \n\n";
 
-  const itemsStock = carrito.filter(item => item.tipoStock === 'con_stock');
-  const itemsEncargo = carrito.filter(item => item.tipoStock === 'a_pedido');
+    const itemsStock = carrito.filter(item => item.tipoStock === 'con_stock');
+    const itemsEncargo = carrito.filter(item => item.tipoStock === 'a_pedido');
 
-  // --- SECCIÓN STOCK ---
-  if (itemsStock.length > 0) {
-    mensaje += "✅ *PRODUCTOS EN STOCK:*\n";
-    let totalS = 0;
-    itemsStock.forEach(item => {
-      const sub = item.precioAplicado * item.cantidadPacks;
-      mensaje += `• ${item.cantidadPacks}x ${item.tipoVenta} - *${item.nombre}* ($${sub})\n`;
-      totalS += sub;
-    });
-    mensaje += `\n💰 *TOTAL PRODUCTOS:* $${totalS}\n`;
-    mensaje += `📌 *ALIAS MP:* ${configTienda.aliasMP}\n`;
-  }
+    // --- 2. SECCIÓN STOCK + EFECTO URGENCIA (Punto 2) ---
+    if (itemsStock.length > 0) {
+      mensaje += "✅ *PRODUCTOS EN STOCK:*\n";
+      let totalS = 0;
+      itemsStock.forEach(item => {
+        const sub = item.precioAplicado * item.cantidadPacks;
+        mensaje += `• ${item.cantidadPacks}x ${item.tipoVenta} - *${item.nombre}* ($${sub})\n`;
+        totalS += sub;
+      });
+      mensaje += `\n💰 *TOTAL PRODUCTOS:* $${totalS}\n`;
+      mensaje += `⚠️ _*Nota:* El stock se reserva por 30 min una vez enviado este mensaje._\n\n`; // <-- AQUÍ EL EFECTO URGENCIA
+    }
 
-  // --- SECCIÓN ENCARGOS ---
-  if (itemsEncargo.length > 0) {
-    mensaje += "\n📦 *ENCARGOS POR PEDIDO (A COORDINAR):*\n";
-    itemsEncargo.forEach(item => {
-      mensaje += `• ${item.cantidadPacks}x ${item.tipoVenta} - *${item.nombre.toUpperCase()}*\n`;
-    });
-  }
+    // --- 3. DATOS DE PAGO / CBU (Punto 3) ---
+    mensaje += `📌 *DATOS PARA EL PAGO:* \n`;
+    mensaje += `• *Alias:* ${configTienda.aliasMP}\n`;
+    mensaje += `• *Titular:* Javier Claros\n`; 
+    mensaje += `• *Banco:* Mercado Pago\n\n`;
 
-  // --- CIERRE ---
-  mensaje += "\n🚀 _Aguardo confirmación de stock para realizar el pago._";
+    // --- 4. INSTRUCCIÓN DE PAGO INMEDIATA (Punto 1) ---
+    mensaje += "💳 *PASOS PARA CONFIRMAR YA MISMO:* \n";
+    mensaje += "1. Completá tus datos arriba.\n";
+    mensaje += "2. Realizá la transferencia al Alias.\n";
+    mensaje += "3. Enviá el comprobante por este chat.\n";
 
-  const num = configTienda.telefono.replace(/\D/g, '');
-  const url = `https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(mensaje)}`;
-  window.open(url, '_blank');
-};
+    // SECCIÓN ENCARGOS (Si los hay)
+    if (itemsEncargo.length > 0) {
+      mensaje += "\n📦 *ARTÍCULOS A PEDIDO:* (Se coordinan por separado)\n";
+      itemsEncargo.forEach(item => {
+        mensaje += `• ${item.cantidadPacks}x ${item.tipoVenta} - *${item.nombre.toUpperCase()}*\n`;
+      });
+    }
+
+    mensaje += "\n🚀 _¡En cuanto recibamos el comprobante preparamos tu despacho!_";
+
+    const num = configTienda.telefono.replace(/\D/g, '');
+    const url = `https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+  };
+
 
 // ... (después seguís con irAlCarrito)
 
