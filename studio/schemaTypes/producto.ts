@@ -35,6 +35,7 @@ export default defineType({
     }),
 
     defineField({ name: 'category', type: 'string', title: 'Categoría' }),
+    
     defineField({
       name: 'imagenes',
       type: 'array',
