@@ -335,6 +335,7 @@ export default function App() {
             </button>
         </div>
       )}
+      <Analytics />
     </div>
   );
 }
