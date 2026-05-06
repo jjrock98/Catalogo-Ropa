@@ -2,6 +2,7 @@ import { createClient } from '@sanity/client';
 import { useState, useEffect } from 'react';
 import { Toaster, toast } from 'sonner';
 import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 const client = createClient({
   projectId: 'hwujeebe',
@@ -335,6 +336,8 @@ export default function App() {
             </button>
         </div>
       )}
+      <Analytics />
+      <SpeedInsights />
     </div>
   );
 }
