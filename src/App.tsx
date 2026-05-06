@@ -159,6 +159,7 @@ export default function App() {
   return (
     <div className={`min-h-screen transition-colors duration-500 pb-20 ${themeBg}`}>
       <Toaster position="bottom-center" richColors />
+      <Analytics />
 
       <style>{`
         .google-maps-container iframe {
