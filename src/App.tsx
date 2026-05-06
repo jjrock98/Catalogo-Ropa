@@ -21,6 +21,7 @@ interface Producto {
   precioDocena: number;
   categoria: string;
   imagenes?: string[];
+  colores?: string[]; // Agregado para los puntitos de colores
 }
 
 interface ItemCarrito extends Producto {
@@ -71,10 +72,12 @@ export default function App() {
           "nombre": name,
           "descripcion": description,
           "tipoStock": tipoStock,
+          "cantidadStock": cantidadStock,
           "precioMediaDocena": precioMediaDocena,
           "precioDocena": precioDocena,
           "categoria": category,
-          "imagenes": imagenes[].asset->url 
+          "imagenes": imagenes[].asset->url,
+          "colores": colores
         }`);
         setProductos(dataProductos);
       } catch (error) {
@@ -151,6 +154,12 @@ export default function App() {
     window.open(`https://wa.me/${num}`, '_blank');
   };
 
+  const volverAlInicio = () => {
+    setVistaActiva('catalogo');
+    setCategoriaActiva('Todas');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const themeBg = modoOscuro ? "bg-slate-900 text-slate-100" : "bg-slate-50 text-slate-900";
   const cardBg = modoOscuro ? "bg-slate-800/60 border-slate-700 backdrop-blur-md" : "bg-white/70 border-white shadow-xl backdrop-blur-md";
 
@@ -171,10 +180,13 @@ export default function App() {
 
       <header className={`sticky top-0 z-40 w-full border-b backdrop-blur-lg ${modoOscuro ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-slate-200'}`}>
         <div className="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
-          <div className="flex flex-col">
+          
+          {/* LOGO BOTÓN QUE LLEVA AL INICIO */}
+          <button onClick={volverAlInicio} className="flex flex-col text-left transition hover:opacity-80 active:scale-95">
             <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent leading-none">CLAROS</h1>
             <span className="text-[10px] tracking-[0.3em] font-bold opacity-50 uppercase">Importados</span>
-          </div>
+          </button>
+
           <div className="flex items-center gap-4">
             <button onClick={() => setModoOscuro(!modoOscuro)} className="text-xl p-2 rounded-full hover:bg-slate-500/10 transition">
               {modoOscuro ? '☀️' : '🌙'}
@@ -203,22 +215,85 @@ export default function App() {
                   <button key={cat} onClick={() => setCategoriaActiva(cat)} className={`px-6 py-2.5 rounded-full font-bold whitespace-nowrap transition-all ${categoriaActiva === cat ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-slate-500/10 hover:bg-slate-500/20'}`}>{cat}</button>
                 ))}
               </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {productos.filter(p => categoriaActiva === 'Todas' || p.categoria === categoriaActiva).map(prod => (
-                  <div key={prod.id} className={`rounded-[2.5rem] border p-5 transition-all hover:shadow-2xl ${cardBg}`}>
-                    {prod.imagenes && <img src={prod.imagenes[0]} className="w-full h-72 object-cover rounded-[1.8rem] mb-6 shadow-inner" alt={prod.nombre} />}
-                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-500 px-3 py-1 bg-blue-500/10 rounded-full">{prod.categoria}</span>
-                    <h3 className="text-2xl font-black mt-3 mb-2">{prod.nombre}</h3>
-                    <div className="grid grid-cols-2 gap-3 mt-4">
-                      <button onClick={() => agregarAlCarrito(prod, 'Media Docena')} className="flex flex-col items-center bg-slate-500/5 p-4 rounded-3xl hover:bg-blue-600 hover:text-white transition group">
-                        <span className="text-[10px] font-bold uppercase opacity-60 group-hover:opacity-100">Media Docena</span>
-                        <span className="text-lg font-black">${prod.precioMediaDocena}</span>
-                      </button>
-                      <button onClick={() => agregarAlCarrito(prod, 'Docena')} className="flex flex-col items-center bg-slate-500/5 p-4 rounded-3xl hover:bg-blue-600 hover:text-white transition group">
-                        <span className="text-[10px] font-bold uppercase opacity-60 group-hover:opacity-100">Docena</span>
-                        <span className="text-lg font-black">${prod.precioDocena}</span>
-                      </button>
+                  <div key={prod.id} className={`rounded-[2.5rem] border p-5 transition-all hover:shadow-2xl flex flex-col justify-between ${cardBg}`}>
+                    
+                    {/* IMAGEN Y ETIQUETAS */}
+                    <div>
+                      {prod.imagenes && <img src={prod.imagenes[0]} className="w-full h-72 object-cover rounded-[1.8rem] mb-4 shadow-inner" alt={prod.nombre} />}
+                      
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-blue-500 px-3 py-1 bg-blue-500/10 rounded-full">
+                          {prod.categoria}
+                        </span>
+                        
+                        {/* PUNTITOS DE COLORES */}
+                        {prod.colores && prod.colores.length > 0 && (
+                          <div className="flex gap-1.5">
+                            {prod.colores.map((color, idx) => (
+                              <span 
+                                key={idx} 
+                                className="w-4 h-4 rounded-full border border-slate-300 shadow-sm" 
+                                style={{ backgroundColor: color }}
+                                title="Color disponible"
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <h3 className="text-2xl font-black mt-2 mb-1">{prod.nombre}</h3>
+                      
+                      {/* INDICADOR DE STOCK NUMÉRICO */}
+                      {prod.tipoStock === 'con_stock' && (
+                        <p className="text-xs font-bold text-green-500 mb-4 flex items-center gap-1.5">
+                          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                          Stock disponible: {prod.cantidadStock} unidades
+                        </p>
+                      )}
                     </div>
+
+                    {/* BOTONES CONDICIONALES */}
+                    <div className="mt-4">
+                      {prod.tipoStock === 'con_stock' ? (
+                        /* VISTA: CON STOCK (Permite agregar al carrito) */
+                        <div className="grid grid-cols-2 gap-3">
+                          <button onClick={() => agregarAlCarrito(prod, 'Media Docena')} className="flex flex-col items-center bg-slate-500/5 p-4 rounded-3xl hover:bg-blue-600 hover:text-white transition group">
+                            <span className="text-[10px] font-bold uppercase opacity-60 group-hover:opacity-100">Media Docena</span>
+                            <span className="text-lg font-black">${prod.precioMediaDocena}</span>
+                          </button>
+                          <button onClick={() => agregarAlCarrito(prod, 'Docena')} className="flex flex-col items-center bg-slate-500/5 p-4 rounded-3xl hover:bg-blue-600 hover:text-white transition group">
+                            <span className="text-[10px] font-bold uppercase opacity-60 group-hover:opacity-100">Docena</span>
+                            <span className="text-lg font-black">${prod.precioDocena}</span>
+                          </button>
+                        </div>
+                      ) : (
+                        /* VISTA: A PEDIDO (No permite agregar al carrito) */
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="flex flex-col items-center justify-center bg-orange-500/10 text-orange-600 p-4 rounded-3xl border border-orange-500/20 cursor-default">
+                            <span className="text-[10px] font-bold uppercase opacity-80 mb-1">Disponibilidad</span>
+                            <span className="text-sm font-black tracking-widest uppercase">A Pedido</span>
+                          </div>
+                          
+                          <button 
+                            onClick={() => {
+                              const num = configTienda.telefono.replace(/\D/g, '');
+                              const msj = `Hola, quiero encargar por anticipado el producto: *${prod.nombre}*. ¿Me pasas información?`;
+                              window.open(`https://wa.me/${num}?text=${encodeURIComponent(msj)}`, '_blank');
+                            }}
+                            className={`flex flex-col items-center justify-center p-4 rounded-3xl hover:scale-105 transition shadow-lg ${modoOscuro ? 'bg-slate-100 text-slate-900' : 'bg-slate-900 text-white'}`}
+                          >
+                            <span className="text-[10px] font-bold uppercase opacity-80 mb-1">Encargar ahora</span>
+                            <span className="text-lg font-black flex items-center gap-2">
+                              Contactar <span className="text-base">💬</span>
+                            </span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
                   </div>
                 ))}
               </div>
@@ -338,5 +413,5 @@ export default function App() {
     </div>
   );
 }
-// --- FIN DEL ARCHIVO ---
+
 
