@@ -21,7 +21,7 @@ interface Producto {
   precioDocena: number;
   categoria: string;
   imagenes?: string[];
-  colores?: string[]; // Agregado para los puntitos de colores
+  colores?: string[];
 }
 
 interface ItemCarrito extends Producto {
@@ -168,6 +168,7 @@ export default function App() {
   return (
     <div className={`min-h-screen transition-colors duration-500 pb-20 ${themeBg}`}>
       <Toaster position="bottom-center" richColors />
+      <Analytics />
 
       <style>{`
         .google-maps-container iframe {
@@ -255,10 +256,9 @@ export default function App() {
                       )}
                     </div>
 
-                    {/* BOTONES CONDICIONALES */}
+                    {/* BOTONES CONDICIONALES ACTUALIZADOS */}
                     <div className="mt-4">
                       {prod.tipoStock === 'con_stock' ? (
-                        /* VISTA: CON STOCK (Permite agregar al carrito) */
                         <div className="grid grid-cols-2 gap-3">
                           <button onClick={() => agregarAlCarrito(prod, 'Media Docena')} className="flex flex-col items-center bg-slate-500/5 p-4 rounded-3xl hover:bg-blue-600 hover:text-white transition group">
                             <span className="text-[10px] font-bold uppercase opacity-60 group-hover:opacity-100">Media Docena</span>
@@ -270,27 +270,20 @@ export default function App() {
                           </button>
                         </div>
                       ) : (
-                        /* VISTA: A PEDIDO (No permite agregar al carrito) */
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="flex flex-col items-center justify-center bg-orange-500/10 text-orange-600 p-4 rounded-3xl border border-orange-500/20 cursor-default">
-                            <span className="text-[10px] font-bold uppercase opacity-80 mb-1">Disponibilidad</span>
-                            <span className="text-sm font-black tracking-widest uppercase">A Pedido</span>
+                        <button 
+                          onClick={() => {
+                            const num = configTienda.telefono.replace(/\D/g, '');
+                            const msj = `Hola, me interesa encargar el producto: *${prod.nombre}*. Sé que es a pedido, ¿me podrías dar más detalles de disponibilidad y tiempos?`;
+                            window.open(`https://wa.me/${num}?text=${encodeURIComponent(msj)}`, '_blank');
+                          }}
+                          className={`w-full flex flex-row items-center justify-center gap-3 p-4 rounded-3xl hover:scale-[1.02] transition-all shadow-lg ${modoOscuro ? 'bg-slate-100 text-slate-900' : 'bg-slate-900 text-white'}`}
+                        >
+                          <span className="text-2xl">💬</span>
+                          <div className="flex flex-col items-start text-left">
+                            <span className="text-[10px] font-bold uppercase opacity-80 leading-none mb-1">Sin stock inmediato</span>
+                            <span className="text-base font-black uppercase tracking-wide leading-none">Reservar / A pedido</span>
                           </div>
-                          
-                          <button 
-                            onClick={() => {
-                              const num = configTienda.telefono.replace(/\D/g, '');
-                              const msj = `Hola, quiero encargar por anticipado el producto: *${prod.nombre}*. ¿Me pasas información?`;
-                              window.open(`https://wa.me/${num}?text=${encodeURIComponent(msj)}`, '_blank');
-                            }}
-                            className={`flex flex-col items-center justify-center p-4 rounded-3xl hover:scale-105 transition shadow-lg ${modoOscuro ? 'bg-slate-100 text-slate-900' : 'bg-slate-900 text-white'}`}
-                          >
-                            <span className="text-[10px] font-bold uppercase opacity-80 mb-1">Encargar ahora</span>
-                            <span className="text-lg font-black flex items-center gap-2">
-                              Contactar <span className="text-base">💬</span>
-                            </span>
-                          </button>
-                        </div>
+                        </button>
                       )}
                     </div>
 
@@ -342,7 +335,6 @@ export default function App() {
           <div className="max-w-4xl mx-auto py-10 text-center flex flex-col items-center">
              <h2 className="text-4xl font-black mb-8">Contacto y Ubicación</h2>
              
-             {/* BOTÓN WHATSAPP VERDE */}
              <button 
                onClick={abrirWhatsAppDirecto}
                className="mb-12 bg-[#25D366] hover:bg-[#128C7E] text-white px-10 py-5 rounded-[2rem] font-black flex items-center gap-4 shadow-2xl shadow-green-500/30 transition-all hover:scale-105 active:scale-95"
@@ -360,7 +352,6 @@ export default function App() {
                   <p className="text-2xl font-black">{configTienda.direccion || "Dirección no configurada"}</p>
                </div>
                
-               {/* DESCRIPCIÓN DINÁMICA */}
                {configTienda.descripcionUbicacion && (
                  <div className="bg-slate-500/5 p-8 rounded-[2.5rem] border border-slate-500/10 max-w-2xl mx-auto relative">
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[9px] font-bold px-3 py-1 rounded-full uppercase">Información</span>
@@ -371,7 +362,6 @@ export default function App() {
                )}
              </div>
              
-             {/* IFRAME DE GOOGLE MAPS */}
              <div className="w-full h-[500px] google-maps-container shadow-2xl rounded-[2.5rem] overflow-hidden border-8 border-white/40 bg-slate-200">
                {configTienda.mapaIframe ? (
                  <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: configTienda.mapaIframe }} />
@@ -413,5 +403,6 @@ export default function App() {
     </div>
   );
 }
+
 
 
